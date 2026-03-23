@@ -11,7 +11,7 @@ function sanitizeUser(user) {
     return null;
   }
 
-  const sanitized = { ...user };
+  const sanitized = user.toObject();
   delete sanitized.password;
   return sanitized;
 }

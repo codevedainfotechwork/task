@@ -13,7 +13,7 @@ function departmentsOverlap(source = [], target = []) {
 // Helper to sanitize user
 function sanitizeUser(user) {
   if (!user) return null;
-  const sanitized = { ...user };
+  const sanitized = user.toObject();
   delete sanitized.password;
   return sanitized;
 }
