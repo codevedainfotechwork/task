@@ -103,14 +103,6 @@ export default function EmployeeDashboard() {
 
   const allTasks = useMemo(() => getTasksForUser('employee', currentUser.id, []), [currentUser, getTasksForUser]);
 
-  if (loading) {
-    return (
-      <div className="p-8">
-        <DashboardSkeleton />
-      </div>
-    );
-  }
-
   const filtered = useMemo(() => {
     let list = allTasks;
     if (search) list = list.filter(t => t.title.toLowerCase().includes(search.toLowerCase()) || t.description.toLowerCase().includes(search.toLowerCase()));
@@ -123,6 +115,14 @@ export default function EmployeeDashboard() {
   const todayTasks    = useMemo(() => filtered.filter(isTaskToday), [filtered]);
   const upcomingTasks = useMemo(() => filtered.filter(isUpcoming),  [filtered]);
   const completedTasks = useMemo(() => filtered.filter(t => t.status === 'Completed'), [filtered]);
+
+  if (loading) {
+    return (
+      <div className="p-8">
+        <DashboardSkeleton />
+      </div>
+    );
+  }
 
   const total     = allTasks.length;
   const completed = allTasks.filter(t => t.status === 'Completed').length;
