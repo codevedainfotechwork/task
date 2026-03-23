@@ -18,6 +18,13 @@ const userSchema = new mongoose.Schema({
       delete ret.password;
       return ret;
     }
+  },
+  toObject: {
+    transform: (doc, ret) => {
+      ret.id = ret._id;
+      delete ret.password;
+      return ret;
+    }
   }
 });
 

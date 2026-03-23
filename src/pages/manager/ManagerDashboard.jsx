@@ -125,12 +125,12 @@ export default function ManagerDashboard() {
   const assignableEmployees = useMemo(() => {
     const term = employeeSearch.trim().toLowerCase();
     return employees
-      .filter((e) => e.department.includes(taskForm.department))
+      .filter((e) => (e.department || []).map(d => String(d).toLowerCase()).includes(String(taskForm.department).toLowerCase()))
       .filter((e) => {
         if (!term) return true;
         return (
-          e.name.toLowerCase().includes(term) ||
-          e.email.toLowerCase().includes(term)
+          String(e.name).toLowerCase().includes(term) ||
+          String(e.email).toLowerCase().includes(term)
         );
     });
   }, [employees, employeeSearch, taskForm.department]);
@@ -193,7 +193,7 @@ export default function ManagerDashboard() {
       const updatedEmployee = res.data.employee;
 
       setEmployees((prev) => prev.map((employee) => (
-        employee._id === userId ? updatedEmployee : employee
+        String(employee._id) === String(userId) || String(employee.id) === String(userId) ? updatedEmployee : employee
       )));
     } catch (err) {
       addToast(err.response?.data?.message || t('err_failed_users'), 'error');
@@ -261,10 +261,11 @@ export default function ManagerDashboard() {
   const getTransferableTasksFromList = (taskList = []) => {
     return taskList.filter((task) => {
       const managerOwnsTask =
-        String(task.assignedBy) === String(currentUser?._id) ||
-        String(task.assignedTo) === String(currentUser?._id);
+        String(task.assignedBy) === String(currentUser?._id) || String(task.assignedBy) === String(currentUser?.id) ||
+        String(task.assignedTo) === String(currentUser?._id) || String(task.assignedTo) === String(currentUser?.id);
 
-      return managerOwnsTask && (currentUser?.department || []).includes(task.department);
+      const normalizedManagerDepts = (currentUser?.department || []).map(d => String(d).toLowerCase());
+      return managerOwnsTask && normalizedManagerDepts.includes(String(task.department).toLowerCase());
     });
   };
 
@@ -451,8 +452,9 @@ export default function ManagerDashboard() {
   }, [transferOpen, transferDepartments, transferManagerOptions, transferForm.department, transferForm.managerId, transferModalTask]);
 
   const myDeptTasks = useMemo(() => {
-    if (viewDept === 'All') return tasks.filter(t => currentUser?.department?.includes(t.department));
-    return tasks.filter(t => t.department === viewDept);
+    const normalizedManagerDepts = (currentUser?.department || []).map(d => String(d).toLowerCase());
+    if (viewDept === 'All') return tasks.filter(t => normalizedManagerDepts.includes(String(t.department).toLowerCase()));
+    return tasks.filter(t => String(t.department).toLowerCase() === String(viewDept).toLowerCase());
   }, [tasks, viewDept, currentUser]);
 
   const stats = useMemo(() => {
@@ -474,14 +476,14 @@ export default function ManagerDashboard() {
 
   const filteredTasks = useMemo(() => {
     return myDeptTasks.filter(t => {
-      const assignedEmployee = employees.find(e => String(e._id) === String(t.assignedTo));
+      const assignedEmployee = employees.find(e => String(e._id) === String(t.assignedTo) || String(e.id) === String(t.assignedTo));
       const assigneeName = assignedEmployee ? assignedEmployee.name : '';
       const searchTarget = `${t.title} ${assigneeName}`.toLowerCase();
       
-      const matchesSearch = searchTarget.includes(taskFilters.search.toLowerCase());
-      const matchesStatus = taskFilters.status === 'All' || String(t.status) === String(taskFilters.status);
+      const matchesSearch = searchTarget.includes(String(taskFilters.search).toLowerCase());
+      const matchesStatus = taskFilters.status === 'All' || String(t.status).toLowerCase() === String(taskFilters.status).toLowerCase();
       const matchesAssignee = taskFilters.assignee === 'All' || String(t.assignedTo) === String(taskFilters.assignee);
-      const matchesDept = taskFilters.department === 'All' || String(t.department) === String(taskFilters.department);
+      const matchesDept = taskFilters.department === 'All' || String(t.department).toLowerCase() === String(taskFilters.department).toLowerCase();
       return matchesSearch && matchesStatus && matchesAssignee && matchesDept;
     });
   }, [myDeptTasks, taskFilters, employees]);

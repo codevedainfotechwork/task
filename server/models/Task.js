@@ -27,6 +27,12 @@ const taskSchema = new mongoose.Schema({
       ret.id = ret._id;
       return ret;
     }
+  },
+  toObject: {
+    transform: (doc, ret) => {
+      ret.id = ret._id;
+      return ret;
+    }
   }
 });
 

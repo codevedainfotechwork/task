@@ -94,10 +94,15 @@ export function TaskProvider({ children }) {
 
   const getAllTasks = () => tasks;
   
-  const getTasksForUser = (role, userId, departments) => {
+  const getTasksForUser = (role, userId, departments = []) => {
+    if (!userId) return [];
+    const uid = String(userId);
     if (role === 'admin') return tasks;
-    if (role === 'manager') return tasks.filter(t => departments.includes(t.department));
-    return tasks.filter(t => t.assignedTo === userId);
+    if (role === 'manager') {
+      const normalizedDepts = (departments || []).map(d => String(d).toLowerCase());
+      return tasks.filter(t => normalizedDepts.includes(String(t.department).toLowerCase()));
+    }
+    return tasks.filter(t => String(t.assignedTo) === uid || String(t.id) === uid || String(t._id) === uid);
   };
 
   const value = {

@@ -101,20 +101,27 @@ export default function EmployeeDashboard() {
   const [statusFilter, setStatusFilter] = useState('All');
   const [priorityFilter, setPriorityFilter] = useState('All');
 
-  const allTasks = useMemo(() => getTasksForUser('employee', currentUser.id, []), [currentUser, getTasksForUser]);
+  const allTasks = useMemo(() => getTasksForUser('employee', currentUser?.id || currentUser?._id, []), [currentUser, getTasksForUser]);
 
   const filtered = useMemo(() => {
     let list = allTasks;
-    if (search) list = list.filter(t => t.title.toLowerCase().includes(search.toLowerCase()) || t.description.toLowerCase().includes(search.toLowerCase()));
-    if (statusFilter !== 'All') list = list.filter(t => t.status === statusFilter);
-    if (priorityFilter !== 'All') list = list.filter(t => t.priority === priorityFilter);
+    if (search) {
+      const s = search.toLowerCase();
+      list = list.filter(t => String(t.title).toLowerCase().includes(s) || String(t.description).toLowerCase().includes(s));
+    }
+    if (statusFilter !== 'All') {
+      list = list.filter(t => String(t.status).toLowerCase() === statusFilter.toLowerCase());
+    }
+    if (priorityFilter !== 'All') {
+      list = list.filter(t => String(t.priority).toLowerCase() === priorityFilter.toLowerCase());
+    }
     return list;
   }, [allTasks, search, statusFilter, priorityFilter]);
 
   const overdueTasks  = useMemo(() => filtered.filter(isOverdue),  [filtered]);
   const todayTasks    = useMemo(() => filtered.filter(isTaskToday), [filtered]);
   const upcomingTasks = useMemo(() => filtered.filter(isUpcoming),  [filtered]);
-  const completedTasks = useMemo(() => filtered.filter(t => t.status === 'Completed'), [filtered]);
+  const completedTasks = useMemo(() => filtered.filter(t => String(t.status).toLowerCase() === 'completed'), [filtered]);
 
   if (loading) {
     return (
@@ -125,8 +132,8 @@ export default function EmployeeDashboard() {
   }
 
   const total     = allTasks.length;
-  const completed = allTasks.filter(t => t.status === 'Completed').length;
-  const pending   = allTasks.filter(t => t.status === 'Pending').length;
+  const completed = allTasks.filter(t => String(t.status).toLowerCase() === 'completed').length;
+  const pending   = allTasks.filter(t => String(t.status).toLowerCase() === 'pending').length;
   const progress  = total ? Math.round((completed / total) * 100) : 0;
 
   const STATUS_OPTIONS   = ['All', 'Pending', 'In Progress', 'Completed'];
