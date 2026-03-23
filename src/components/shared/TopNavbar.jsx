@@ -12,6 +12,8 @@ export default function TopNavbar({ pageTitle, setMobileOpen }) {
   const { currentLanguage, setCurrentLanguage, t } = useLanguage();
   const { theme, toggleTheme } = useTheme();
   const isDark = theme === 'dark';
+  const [showNotificationPanel, setShowNotificationPanel] = useState(false);
+  const [showLangMenu, setShowLangMenu] = useState(false);
   const notificationPanelRef = useRef(null);
   const langMenuRef = useRef(null);
   const recentNotifications = notifications.slice(0, 8);
