@@ -48,7 +48,7 @@ async function deleteDepartment(req, res) {
     res.json({
       message: 'Department successfully deleted.',
       department: {
-        ...department,
+        ...department.toObject(),
         isDeleted: true,
       },
     });

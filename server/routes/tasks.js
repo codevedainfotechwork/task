@@ -37,7 +37,7 @@ async function getManagerScopedEmployee(manager, employeeId) {
 }
 
 function sanitizeTask(task) {
-  return task ? { ...task } : null;
+  return task ? task.toObject() : null;
 }
 
 function buildTaskNotificationPayload(task, notification, overrides = {}) {
