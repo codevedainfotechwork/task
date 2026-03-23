@@ -114,30 +114,6 @@ app.use('/api', require('./routes/departments'));
 app.use('/api/admin', require('./routes/admin'));
 app.use('/api/manager', require('./routes/manager'));
 
-// ====== TEMPORARY SEED ROUTE ======
-app.get('/setup', async (req, res) => {
-  try {
-    const User = require('./models/User');
-    const bcrypt = require('bcryptjs');
-    const existing = await User.findOne({ email: 'parca@gmail.com' });
-    if(existing) return res.send('User already exists. Please login!');
-    
-    const hashedPassword = await bcrypt.hash('parca18', 10);
-    await User.create({
-      name: 'Super Admin',
-      email: 'parca@gmail.com',
-      password: hashedPassword,
-      role: 'admin',
-      department: ['HR', 'IT', 'Finance', 'All'],
-      isActive: true
-    });
-    res.send('✅ Admin user created successfully! You can now log in.');
-  } catch(e) {
-    res.send('Error: ' + e.message);
-  }
-});
-// ==================================
-
 // Simple healthcheck route
 app.get('/health', (req, res) => res.json({ status: 'ok', server: 'TaskFlow Cyber Backend' }));
 
