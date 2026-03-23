@@ -18,7 +18,7 @@ router.get('/', auth, async (req, res) => {
         const isTransferNotification = /^Task transferred to you:/i.test(notification.message || '');
 
         return {
-          ...notification,
+          ...notification.toObject(),
           title: isTransferNotification ? 'Task Transferred To You' : 'New Task Assigned',
           taskTitle: task?.title || notification.message,
           description: task?.description || '',
