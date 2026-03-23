@@ -5,7 +5,7 @@ const { Server } = require('socket.io');
 const jwt = require('jsonwebtoken');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
-const mongoSanitize = require('express-mongo-sanitize');
+// mongoSanitize removed due to Express 5 incompatibility
 const taskCleanupCron = require('./cron/taskCleanup');
 const Department = require('./models/Department');
 const Task = require('./models/Task');
@@ -87,8 +87,7 @@ app.use((req, res, next) => {
 // CRITICAL: Body parser MUST be before sanitization middlewares!
 app.use(express.json());
 
-// Security: Prevent NoSQL Injection
-app.use(mongoSanitize());
+// Removing express-mongo-sanitize because it crashes Express 5 (req.query is read-only)
 
 // Security: Rate Limiting
 const limiter = rateLimit({
