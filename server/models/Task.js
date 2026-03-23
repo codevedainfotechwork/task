@@ -34,4 +34,29 @@ taskSchema.statics.updateById = function(id, updates) {
   return this.findByIdAndUpdate(id, updates, { new: true });
 };
 
+taskSchema.statics.normalizeStatus = function(status) {
+  if (!status) return 'Pending';
+  const s = String(status).toLowerCase();
+  if (s.includes('progress')) return 'In Progress';
+  if (s.includes('pend')) return 'Pending';
+  if (s.includes('comp') || s.includes('done')) return 'Completed';
+  return 'Pending';
+};
+
+taskSchema.statics.formatDateTime = function(date) {
+  return new Date(date).toISOString();
+};
+
+taskSchema.statics.formatDateOnly = function(date) {
+  return new Date(date).toISOString().split('T')[0];
+};
+
+taskSchema.statics.normalizePriority = function(priority) {
+  if (!priority) return 'Medium';
+  const p = String(priority).toLowerCase();
+  if (p === 'low') return 'Low';
+  if (p === 'high') return 'High';
+  return 'Medium';
+};
+
 module.exports = mongoose.model('Task', taskSchema);
