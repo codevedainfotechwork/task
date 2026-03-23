@@ -1,6 +1,5 @@
 require('dotenv').config();
 const express = require('express');
-const cors = require('cors');
 const http = require('http');
 const { Server } = require('socket.io');
 const jwt = require('jsonwebtoken');
@@ -17,20 +16,23 @@ const server = http.createServer(app);
 // Trust proxy for Render/Railway (required for rate limiting)
 app.set('trust proxy', 1);
 
-// Perfect CORS configuration for Render and Local Development
-const corsOptions = {
-  origin: true, // Safely reflect the exact origin of the request
-  credentials: true,
-  methods: ['GET', 'POST', 'PATCH', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'Accept']
-};
-app.use(cors(corsOptions));
-
-// Explicitly handle all OPTIONS requests to prevent 404s on preflight
+// Perfect Manual CORS configuration for Render and Local Development (No npm package needed)
 app.use((req, res, next) => {
+  const origin = req.headers.origin;
+  if (origin) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+  } else {
+    res.setHeader('Access-Control-Allow-Origin', '*'); 
+  }
+  res.setHeader('Access-Control-Allow-Credentials', 'true');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
+
+  // Explicitly handle all OPTIONS requests to prevent 404s on preflight
   if (req.method === 'OPTIONS') {
     return res.status(204).end();
   }
+  
   next();
 });
 
