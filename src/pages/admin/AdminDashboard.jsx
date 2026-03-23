@@ -414,7 +414,7 @@ export default function AdminDashboard() {
   }), [allTasks]);
 
   const deptChartData = useMemo(() => departments.map((dept, i) => ({
-    name: dept.name.substring(0, 4).toUpperCase(),
+    name: (dept?.name || 'DEPT').substring(0, 4).toUpperCase(),
     Completed: allTasks.filter(t => t.department === dept.name && t.status === 'Completed').length,
     Active:    allTasks.filter(t => t.department === dept.name && t.status === 'In Progress').length,
     Pending:   allTasks.filter(t => t.department === dept.name && t.status === 'Pending').length,
@@ -601,7 +601,7 @@ export default function AdminDashboard() {
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-6">
               {deptProgress.map((d, i) => (
                 <div key={d.dept} className="flex flex-col items-center gap-3">
-                  <RingProgress value={d.pct} color={DEPT_COLORS[i]} size={110} label={d.dept.substring(0,4).toUpperCase() + ` ${d.done}/${d.total}`} />
+                  <RingProgress value={d.pct} color={DEPT_COLORS[i]} size={110} label={(d.dept || 'DEPT').substring(0,4).toUpperCase() + ` ${d.done}/${d.total}`} />
                 </div>
               ))}
             </div>
@@ -624,7 +624,7 @@ export default function AdminDashboard() {
             <div className="cyber-tab-bar w-full md:w-auto overflow-x-auto scrollbar-hide py-1">
               <button onClick={() => setDeptFilter('All')} className={`cyber-tab flex-shrink-0 ${deptFilter === 'All' ? 'active' : ''}`}>{t('all_depts_filter').toUpperCase()}</button>
               {departmentNames.map(d => (
-                <button key={d} onClick={() => setDeptFilter(d)} className={`cyber-tab flex-shrink-0 ${deptFilter === d ? 'active' : ''}`}>{d.substring(0,4).toUpperCase()}</button>
+                <button key={d} onClick={() => setDeptFilter(d)} className={`cyber-tab flex-shrink-0 ${deptFilter === d ? 'active' : ''}`}>{(d || 'DEPT').substring(0,4).toUpperCase()}</button>
               ))}
             </div>
             <span className="text-[10px] hidden md:block font-mono ml-auto font-bold tracking-widest px-3 py-1.5 rounded-lg border uppercase" style={{ color: 'rgba(0,212,255,0.8)', borderColor: 'rgba(0,212,255,0.2)', background: 'rgba(0,212,255,0.05)' }}>{filteredTasks.length} {t('records_label')}</span>
@@ -664,7 +664,7 @@ export default function AdminDashboard() {
                         </td>
                         <td className="px-6 py-4 font-mono text-[11px] text-slate-400">{user?.name || '—'}</td>
                         <td className="px-6 py-4"><span className="text-[10px] font-mono font-bold px-2 py-1 rounded bg-white/5 border border-white/10 text-cyan-400 uppercase">{t(task.department.toLowerCase())}</span></td>
-                        <td className="px-6 py-4"><span className={`text-[10px] font-mono font-bold px-2 py-1 rounded border shadow-lg uppercase ${task.priority === 'High' ? 'text-red-400 border-red-500/30 shadow-red-500/20 bg-red-500/10' : task.priority === 'Medium' ? 'text-yellow-400 border-yellow-500/30 shadow-yellow-500/20 bg-yellow-500/10' : 'text-emerald-400 border-emerald-500/30 shadow-emerald-500/20 bg-yellow-500/10'}`}>{t(`priority_${task.priority.toLowerCase().substring(0,3)}`)}</span></td>
+                        <td className="px-6 py-4"><span className={`text-[10px] font-mono font-bold px-2 py-1 rounded border shadow-lg uppercase ${task.priority === 'High' ? 'text-red-400 border-red-500/30 shadow-red-500/20 bg-red-500/10' : task.priority === 'Medium' ? 'text-yellow-400 border-yellow-500/30 shadow-yellow-500/20 bg-yellow-500/10' : 'text-emerald-400 border-emerald-500/30 shadow-emerald-500/20 bg-yellow-500/10'}`}>{t(`priority_${(task.priority || 'Medium').toLowerCase().substring(0,3)}`)}</span></td>
                         <td className="px-6 py-4"><span className={`text-[10px] font-mono font-bold px-2 py-1 flex items-center gap-1 w-fit rounded uppercase ${task.status === 'Completed' ? 'text-emerald-400' : task.status === 'In Progress' ? 'text-cyan-400' : 'text-yellow-400'}`}>{task.status === 'Completed' ? <CheckCircle2 size={12}/> : task.status === 'In Progress' ? <Activity size={12}/> : <Clock size={12}/>}{t(`status_${task.status === 'In Progress' ? 'active' : task.status === 'Completed' ? 'done' : 'pending'}`)}</span></td>
                         <td className="px-6 py-4 flex justify-end gap-2">
                           <motion.button 
