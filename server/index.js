@@ -18,12 +18,21 @@ const server = http.createServer(app);
 app.set('trust proxy', 1);
 
 // Perfect CORS configuration for Render and Local Development
-app.use(cors({
+const corsOptions = {
   origin: true, // Safely reflect the exact origin of the request
   credentials: true,
   methods: ['GET', 'POST', 'PATCH', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'Accept']
-}));
+};
+app.use(cors(corsOptions));
+
+// Explicitly handle all OPTIONS requests to prevent 404s on preflight
+app.use((req, res, next) => {
+  if (req.method === 'OPTIONS') {
+    return res.status(204).end();
+  }
+  next();
+});
 
 // Standard security headers
 app.use(helmet({
