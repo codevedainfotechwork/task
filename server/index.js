@@ -121,6 +121,16 @@ app.get('/health', (req, res) => res.json({ status: 'ok', server: 'TaskFlow Cybe
 // Start Cron Jobs
 taskCleanupCron();
 
+// CRITICAL: Global Error Handler to catch middleware or unhandled promise crashes
+app.use((err, req, res, next) => {
+  console.error('GLOBAL EXPRESS ERROR:', err);
+  res.status(500).json({
+    error: 'Global Server Error',
+    message: err.message || 'Unknown error occurred in middleware',
+    stack: err.stack
+  });
+});
+
 const connectDB = require('./config/db');
 
 async function startServer() {
