@@ -70,7 +70,7 @@ router.post('/login', [
     );
 
     // Strip password before sending response
-    const safeUser = { ...user };
+    const safeUser = user.toObject();
     delete safeUser.password;
 
     // Log success
