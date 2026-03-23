@@ -84,26 +84,27 @@ app.use((req, res, next) => {
   next();
 });
 
+// CRITICAL: Body parser MUST be before sanitization middlewares!
+app.use(express.json());
+
 // Security: Prevent NoSQL Injection
 app.use(mongoSanitize());
 
 // Security: Rate Limiting
 const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // Limit each IP to 100 requests per window
-  message: { message: 'Too many requests from this IP, please try again after 15 minutes.' }
+  windowMs: 15 * 60 * 1000,
+  max: 100,
+  message: { message: 'Too many requests from this IP.' }
 });
 app.use('/api/', limiter);
 
-// Stricter Rate Limit for Auth (Prevent Brute Force)
+// Stricter Rate Limit for Auth
 const authLimiter = rateLimit({
-  windowMs: 60 * 60 * 1000, // 1 hour
-  max: 20, // Limit login attempts to 20 per hour
-  message: { message: 'Too many login attempts, please try again after an hour.' }
+  windowMs: 60 * 60 * 1000,
+  max: 20,
+  message: { message: 'Too many login attempts.' }
 });
 app.use('/api/auth/login', authLimiter);
-
-app.use(express.json());
 
 // Routes setup will go here
 app.use('/api/auth', require('./routes/auth'));
