@@ -30,4 +30,11 @@ userSchema.statics.toggleActive = function(id, currentStatus) {
   return this.findByIdAndUpdate(id, { isActive: !currentStatus }, { new: true });
 };
 
+userSchema.statics.normalizeDepartments = function(input) {
+  if (!input) return [];
+  if (Array.isArray(input)) return input.map(d => String(d).trim()).filter(Boolean);
+  if (typeof input === 'string') return input.split(',').map(d => d.trim()).filter(Boolean);
+  return [];
+};
+
 module.exports = mongoose.model('User', userSchema);
