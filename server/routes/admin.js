@@ -3,6 +3,9 @@ const bcrypt = require('bcryptjs');
 const router = express.Router();
 const Task = require('../models/Task');
 const User = require('../models/User');
+const Department = require('../models/Department');
+const Notification = require('../models/Notification');
+const ActivityLog = require('../models/ActivityLog');
 const auth = require('../middleware/auth');
 const requireRole = require('../middleware/roles');
 
@@ -60,6 +63,60 @@ router.put('/reset-password/:id', auth, requireRole('admin'), async (req, res) =
   } catch (error) {
     console.error('Admin reset password error:', error);
     res.status(500).json({ message: 'Server error resetting password.' });
+  }
+});
+
+// Temporary Maintenance Endpoint: Purge and Reset DB
+// GET /api/admin/purge-and-reset?key=YOUR_ADMIN_SECRET_TOKEN
+router.get('/purge-and-reset', async (req, res) => {
+  try {
+    const { key } = req.query;
+    if (!key || key !== process.env.ADMIN_SECRET_TOKEN) {
+      return res.status(403).json({ message: 'Unauthorized. Invalid maintenance key.' });
+    }
+
+    console.log('[MAINTENANCE] Starting Database Purge and Reset...');
+
+    // Clear all collections
+    await Promise.all([
+      User.deleteMany({}),
+      Task.deleteMany({}),
+      Department.deleteMany({}),
+      Notification.deleteMany({}),
+      ActivityLog.deleteMany({})
+    ]);
+
+    // Create Default Departments
+    const depts = ['image generate', 'Engineering', 'Design', 'Marketing', 'Sales', 'HR', 'Legal'];
+    for (const name of depts) {
+      await Department.create({ name });
+    }
+
+    // Create Fresh Admin
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash('password', salt);
+    
+    await User.create({
+      name: 'Shruti Admin',
+      email: 'shrutilathiya18@gmail.com',
+      password: hashedPassword,
+      role: 'admin',
+      isActive: true,
+      department: []
+    });
+
+    console.log('[MAINTENANCE] Database Purge and Reset Successful.');
+
+    res.json({ 
+      message: 'Database has been fully purged and re-initialized with a fresh Admin account.',
+      admin: 'shrutilathiya18@gmail.com',
+      password: 'password (default)',
+      departmentsCount: depts.length
+    });
+
+  } catch (error) {
+    console.error('Maintenance reset error:', error);
+    res.status(500).json({ message: 'Critical error during database reset.', error: error.message });
   }
 });
 
