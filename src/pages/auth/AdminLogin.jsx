@@ -23,6 +23,7 @@ export default function AdminLogin() {
       await login(form.email, form.password, form.adminToken, 'admin');
       navigate('/admin');
     } catch (err) {
+      console.log('Login error details:', err.response || err);
       setError(err.message);
     } finally {
       setLoading(false);

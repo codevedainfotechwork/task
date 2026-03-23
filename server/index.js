@@ -17,9 +17,33 @@ const server = http.createServer(app);
 // Trust proxy for Render/Railway (required for rate limiting)
 app.set('trust proxy', 1);
 
+// Configure Allowed Origins
+const allowedOrigins = [
+  'https://task-frontend-psym.onrender.com', // Render Frontend
+  'http://localhost:5173',                  // Local Dev
+  'http://192.168.0.49:5173',               // LAN Dev
+  'http://192.168.0.49:5000',               // LAN Backend (if self-referencing)
+];
+
+app.use(cors({
+  origin: function (origin, callback) {
+    // Allow requests with no origin (like mobile apps or curl)
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.indexOf(origin) !== -1 || origin.endsWith('.onrender.com')) {
+      callback(null, true);
+    } else {
+      console.log('CORS Blocked for origin:', origin);
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
+
 // Standard security headers
 app.use(helmet({
-  contentSecurityPolicy: false, // Set to false if using external CDNs or inline scripts
+  contentSecurityPolicy: false,
 }));
 
 // Configure Socket.io
@@ -84,7 +108,6 @@ const authLimiter = rateLimit({
 });
 app.use('/api/auth/login', authLimiter);
 
-app.use(cors());
 app.use(express.json());
 
 // Routes setup will go here

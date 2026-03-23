@@ -23,6 +23,7 @@ export default function EmployeeLogin() {
       const user = await login(form.email, form.password, null, 'employee');
       navigate('/employee');
     } catch (err) {
+      console.log('Login error details:', err.response || err);
       setError(err.message);
     } finally {
       setLoading(false);

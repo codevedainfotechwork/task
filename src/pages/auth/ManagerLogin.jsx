@@ -23,6 +23,7 @@ export default function ManagerLogin() {
       const user = await login(form.email, form.password, null, 'manager');
       navigate('/manager');
     } catch (err) {
+      console.log('Login error details:', err.response || err);
       setError(err.message);
     } finally {
       setLoading(false);
