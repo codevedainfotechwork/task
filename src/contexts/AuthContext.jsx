@@ -16,7 +16,13 @@ export function AuthProvider({ children }) {
     const token = localStorage.getItem('token');
     if (token) {
       api.get(`/auth/me?t=${Date.now()}`)
-        .then(res => setCurrentUser({ ...res.data, avatar: res.data.name.substring(0,2).toUpperCase() }))
+        .then(res => {
+          if (res.data && res.data.name) {
+            setCurrentUser({ ...res.data, avatar: res.data.name.substring(0,2).toUpperCase() });
+          } else {
+            setCurrentUser(null);
+          }
+        })
         .catch(() => {
           localStorage.removeItem('token');
           setCurrentUser(null);
@@ -43,7 +49,8 @@ export function AuthProvider({ children }) {
       const { token, user } = res.data;
       
       localStorage.setItem('token', token);
-      setCurrentUser({ ...user, avatar: (user.name || 'U').substring(0,2).toUpperCase() });
+      const avatar = (user?.name || 'User').substring(0,2).toUpperCase();
+      setCurrentUser({ ...user, avatar });
       return user;
     } catch (error) {
       const errMsg = error.message || error.response?.data?.message || 'Login failed';
