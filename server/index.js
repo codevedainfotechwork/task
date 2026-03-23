@@ -115,7 +115,7 @@ app.use('/api/admin', require('./routes/admin'));
 app.use('/api/manager', require('./routes/manager'));
 
 // Simple healthcheck route
-app.get('/health', (req, res) => res.json({ status: 'ok', server: 'TaskFlow Cyber Backend' }));
+app.get('/health', (req, res) => res.json({ status: 'ok', server: 'TaskFlow Cyber Backend - VERIFIED' }));
 
 // Start Cron Jobs
 taskCleanupCron();
