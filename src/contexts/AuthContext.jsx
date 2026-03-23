@@ -34,13 +34,19 @@ export function AuthProvider({ children }) {
       if (portalRole) payload.portalRole = portalRole;
 
       const res = await api.post('/auth/login', payload);
+      
+      // The backend returns 202 with an error object instead of 401
+      if (res.data.error || !res.data.user) {
+        throw new Error(res.data.message || 'Invalid credentials');
+      }
+
       const { token, user } = res.data;
       
       localStorage.setItem('token', token);
-      setCurrentUser({ ...user, avatar: user.name.substring(0,2).toUpperCase() });
+      setCurrentUser({ ...user, avatar: (user.name || 'U').substring(0,2).toUpperCase() });
       return user;
     } catch (error) {
-      const errMsg = error.response?.data?.message || error.message || 'Login failed';
+      const errMsg = error.message || error.response?.data?.message || 'Login failed';
       throw new Error(errMsg);
     }
   };
