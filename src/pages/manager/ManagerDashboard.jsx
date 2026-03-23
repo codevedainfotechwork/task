@@ -450,14 +450,6 @@ export default function ManagerDashboard() {
     }
   }, [transferOpen, transferDepartments, transferManagerOptions, transferForm.department, transferForm.managerId, transferModalTask]);
 
-  if (loading) {
-    return (
-      <div className="p-8">
-        <DashboardSkeleton />
-      </div>
-    );
-  }
-
   const myDeptTasks = useMemo(() => {
     if (viewDept === 'All') return tasks.filter(t => currentUser?.department?.includes(t.department));
     return tasks.filter(t => t.department === viewDept);
@@ -465,13 +457,42 @@ export default function ManagerDashboard() {
 
   const stats = useMemo(() => {
     const overdueCount = myDeptTasks.filter(t => t.status !== 'Completed' && isBefore(parseISO(t.dueDate + 'T23:59:59'), new Date())).length;
-    return [
-      { label: t('stat_active'), value: myDeptTasks.filter(t => t.status === 'In Progress').length, color: 'text-cyan-400', bg: 'bg-cyan-400/10' },
-      { label: t('stat_pending'), value: myDeptTasks.filter(t => t.status === 'Pending').length, color: 'text-amber-400', bg: 'bg-amber-400/10' },
-      { label: t('stat_completed'), value: myDeptTasks.filter(t => t.status === 'Completed').length, color: 'text-emerald-400', bg: 'bg-emerald-400/10' },
-      { label: t('stat_overdue'), value: overdueCount, color: 'text-red-400', bg: 'bg-red-400/10' },
-    ];
-  }, [myDeptTasks, t]);
+    return {
+      active: myDeptTasks.filter(t => t.status === 'In Progress').length,
+      pending: myDeptTasks.filter(t => t.status === 'Pending').length,
+      completed: myDeptTasks.filter(t => t.status === 'Completed').length,
+      overdue: overdueCount,
+    };
+  }, [myDeptTasks]);
+
+  const filteredEmployees = useMemo(() => {
+    return employees.filter(e => {
+      const term = teamSearch.toLowerCase();
+      return e.name.toLowerCase().includes(term) || e.email.toLowerCase().includes(term);
+    });
+  }, [employees, teamSearch]);
+
+  const filteredTasks = useMemo(() => {
+    return myDeptTasks.filter(t => {
+      const assignedEmployee = employees.find(e => String(e._id) === String(t.assignedTo));
+      const assigneeName = assignedEmployee ? assignedEmployee.name : '';
+      const searchTarget = `${t.title} ${assigneeName}`.toLowerCase();
+      
+      const matchesSearch = searchTarget.includes(taskFilters.search.toLowerCase());
+      const matchesStatus = taskFilters.status === 'All' || String(t.status) === String(taskFilters.status);
+      const matchesAssignee = taskFilters.assignee === 'All' || String(t.assignedTo) === String(taskFilters.assignee);
+      const matchesDept = taskFilters.department === 'All' || String(t.department) === String(taskFilters.department);
+      return matchesSearch && matchesStatus && matchesAssignee && matchesDept;
+    });
+  }, [myDeptTasks, taskFilters, employees]);
+
+  if (loading) {
+    return (
+      <div className="p-8">
+        <DashboardSkeleton />
+      </div>
+    );
+  }
 
   const renderOverview = () => (
     <>
@@ -679,12 +700,7 @@ export default function ManagerDashboard() {
     </>
   );
 
-  const filteredEmployees = useMemo(() => {
-    return employees.filter(e => {
-      const term = teamSearch.toLowerCase();
-      return e.name.toLowerCase().includes(term) || e.email.toLowerCase().includes(term);
-    });
-  }, [employees, teamSearch]);
+
 
   const renderTeam = () => (
     <div className="space-y-8">
@@ -807,19 +823,7 @@ export default function ManagerDashboard() {
     </div>
   );
 
-  const filteredTasks = useMemo(() => {
-    return myDeptTasks.filter(t => {
-      const assignedEmployee = employees.find(e => String(e._id) === String(t.assignedTo));
-      const assigneeName = assignedEmployee ? assignedEmployee.name : '';
-      const searchTarget = `${t.title} ${assigneeName}`.toLowerCase();
-      
-      const matchesSearch = searchTarget.includes(taskFilters.search.toLowerCase());
-      const matchesStatus = taskFilters.status === 'All' || String(t.status) === String(taskFilters.status);
-      const matchesAssignee = taskFilters.assignee === 'All' || String(t.assignedTo) === String(taskFilters.assignee);
-      const matchesDept = taskFilters.department === 'All' || String(t.department) === String(taskFilters.department);
-      return matchesSearch && matchesStatus && matchesAssignee && matchesDept;
-    });
-  }, [myDeptTasks, taskFilters, employees]);
+
 
   const renderTasks = () => (
     <div className="space-y-6">
