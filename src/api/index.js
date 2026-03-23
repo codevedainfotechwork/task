@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const API_PORT = 5000; 
-export const BASE_URL = import.meta.env.VITE_API_URL || 'http://192.168.0.49:5000';
+export const BASE_URL = import.meta.env.VITE_API_URL || 'https://task-backend-j5nn.onrender.com';
 
 const api = axios.create({
   baseURL: `${BASE_URL}/api`,
