@@ -17,28 +17,12 @@ const server = http.createServer(app);
 // Trust proxy for Render/Railway (required for rate limiting)
 app.set('trust proxy', 1);
 
-// Configure Allowed Origins
-const allowedOrigins = [
-  'https://task-frontend-psym.onrender.com', // Render Frontend
-  'http://localhost:5173',                  // Local Dev
-  'http://192.168.0.49:5173',               // LAN Dev
-  'http://192.168.0.49:5000',               // LAN Backend (if self-referencing)
-];
-
+// Perfect CORS configuration for Render and Local Development
 app.use(cors({
-  origin: function (origin, callback) {
-    // Allow requests with no origin (like mobile apps or curl)
-    if (!origin) return callback(null, true);
-    if (allowedOrigins.indexOf(origin) !== -1 || origin.endsWith('.onrender.com')) {
-      callback(null, true);
-    } else {
-      console.log('CORS Blocked for origin:', origin);
-      callback(new Error('Not allowed by CORS'));
-    }
-  },
+  origin: true, // Safely reflect the exact origin of the request
   credentials: true,
   methods: ['GET', 'POST', 'PATCH', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
+  allowedHeaders: ['Content-Type', 'Authorization', 'Accept']
 }));
 
 // Standard security headers
