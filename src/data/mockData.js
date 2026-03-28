@@ -82,7 +82,7 @@ export const INITIAL_TASKS = [
   {
     id: nextId(),
     title: 'Refactor Auth Module',
-    description: 'Rewrite the authentication module with JWT refresh tokens and improved error handling.',
+    description: 'Rewrite the authentication module with session tokens and improved error handling.',
     assignedTo: 'u1',
     department: 'Engineering',
     startDate: format(subDays(today, 5), 'yyyy-MM-dd'),

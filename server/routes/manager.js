@@ -51,7 +51,7 @@ router.get('/employees', auth, requireRole('manager', 'admin'), async (req, res)
 
 // GET /manager/directory
 // Returns all active departments with their active managers
-router.get('/directory', auth, requireRole('manager', 'admin'), async (req, res) => {
+router.get('/directory', auth, requireRole('manager', 'admin', 'employee'), async (req, res) => {
   try {
     const [departments, managers] = await Promise.all([
       Department.findActive(),

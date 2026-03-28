@@ -20,40 +20,32 @@ export default function Modal({ isOpen, onClose, title, children, size = 'md' })
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={onClose}
-            className="fixed inset-0 z-50"
-            style={{ background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(6px)' }}
+            className="fixed inset-0 z-50 bg-black/60 dark:bg-black/80 backdrop-blur-sm"
           />
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
             <motion.div
-              initial={{ opacity: 0, scale: 0.88, y: 30 }}
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.88, y: 30 }}
-              transition={{ type: 'spring', stiffness: 300, damping: 26 }}
-              className={`w-full ${sizes[size]} rounded-2xl overflow-hidden scan-overlay`}
-              style={{
-                background: 'rgba(3,10,24,0.97)',
-                border: '1px solid rgba(0,212,255,0.25)',
-                backdropFilter: 'blur(24px)',
-                boxShadow: '0 30px 80px rgba(0,0,0,0.9), 0 0 60px rgba(0,212,255,0.06)',
-              }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              transition={{ type: 'spring', stiffness: 300, damping: 25 }}
+              className={`w-full ${sizes[size]} rounded-2xl overflow-hidden shadow-2xl relative holo-card`}
+              style={{ background: 'var(--bg-card)', borderColor: 'var(--border-subtle)' }}
             >
-              {/* Holographic top bar */}
-              <div className="flex items-center justify-between px-6 py-4"
-                style={{ borderBottom: '1px solid rgba(0,212,255,0.1)', background: 'rgba(0,212,255,0.04)' }}>
+              <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-indigo-500/50 dark:via-cyan-500/50 to-transparent" />
+              
+              <div className="flex items-center justify-between px-6 py-4 border-b dark:border-white/5 bg-slate-50 dark:bg-white/5"
+                style={{ borderBottomColor: 'var(--border-subtle)' }}>
                 <div className="flex items-center gap-3">
-                  <div className="w-px h-4 rounded-full" style={{ background: 'linear-gradient(to bottom, #00d4ff, #bf00ff)', boxShadow: '0 0 8px #00d4ff' }} />
-                  <h2 className="text-sm font-bold tracking-wide text-slate-100 uppercase">{title}</h2>
+                  <div className="w-1 h-4 rounded-full bg-indigo-600 dark:bg-cyan-500 shadow-[0_0_8px_var(--primary)]" />
+                  <h2 className="text-sm font-mono font-bold tracking-widest text-slate-900 dark:text-white uppercase">// {title}</h2>
                 </div>
                 <button onClick={onClose}
-                  className="p-1.5 rounded-xl transition-all duration-200"
-                  style={{ color: 'rgba(0,212,255,0.4)', border: '1px solid rgba(0,212,255,0.12)' }}
-                  onMouseEnter={e => e.currentTarget.style.color = '#ff4444'}
-                  onMouseLeave={e => e.currentTarget.style.color = 'rgba(0,212,255,0.4)'}
+                  className="p-1.5 rounded-xl transition-all duration-200 text-slate-400 hover:text-red-500 hover:bg-red-500/10 dark:hover:bg-red-500/10"
                 >
-                  <X size={14} />
+                  <X size={16} />
                 </button>
               </div>
-              <div className="px-6 py-5 max-h-[80vh] overflow-y-auto">
+              <div className="px-6 py-5 max-h-[80vh] overflow-y-auto custom-scrollbar">
                 {children}
               </div>
             </motion.div>

@@ -1,9 +1,12 @@
 const express = require('express');
 const bcrypt = require('bcryptjs');
+const crypto = require('crypto');
 const User = require('../models/User');
 const Task = require('../models/Task');
 const auth = require('../middleware/auth');
 const requireRole = require('../middleware/roles');
+const { writeAdminAccessFile } = require('../utils/adminAccessFile');
+const { ensureSupabaseAdminUser } = require('../utils/supabaseAuth');
 
 const router = express.Router();
 
@@ -46,23 +49,31 @@ async function getScopedEmployeeForManager(manager, userId) {
 
 router.post('/', auth, requireRole('admin', 'manager'), async (req, res) => {
   try {
-    const { name, email, password, role, department, managerId } = req.body;
-    const requestedRole = req.user.role === 'manager' ? 'employee' : role;
-    const departments = normalizeDepartments(department);
+    const { name, username, password, role, department, managerId } = req.body;
+    const loginId = String(username || '').trim();
+    const requestedRole = req.user.role === 'manager' ? 'employee' : String(role || '').toLowerCase();
+    const managerDepartment = req.user.role === 'manager'
+      ? normalizeDepartments(req.user.department || [])[0]
+      : null;
+    const departments = requestedRole === 'admin'
+      ? []
+      : req.user.role === 'manager'
+        ? normalizeDepartments(managerDepartment ? [managerDepartment] : [])
+        : normalizeDepartments(department);
 
-    if (!name || !email || !password) {
-      return res.status(400).json({ message: 'Name, email, and password are required.' });
+    if (!name || !loginId || !password) {
+      return res.status(400).json({ message: 'Name, username, and password are required.' });
     }
 
     if (password.length < 6) {
       return res.status(400).json({ message: 'Password must be at least 6 characters.' });
     }
 
-    if (!['manager', 'employee'].includes(requestedRole)) {
+    if (!['admin', 'manager', 'employee'].includes(requestedRole)) {
       return res.status(400).json({ message: 'Invalid role supplied.' });
     }
 
-    if (departments.length === 0) {
+    if (requestedRole !== 'admin' && departments.length === 0) {
       return res.status(400).json({ message: 'At least one department is required.' });
     }
 
@@ -70,9 +81,9 @@ router.post('/', auth, requireRole('admin', 'manager'), async (req, res) => {
       return res.status(400).json({ message: 'Managers must assign exactly one department per employee.' });
     }
 
-    const existingUser = await User.findOne({ email: String(email).trim() }).select('+password');
+    const existingUser = await User.findOne({ email: loginId }).select('+password');
     if (existingUser) {
-      return res.status(400).json({ message: 'Email already in use.' });
+      return res.status(400).json({ message: 'Username already in use.' });
     }
 
     let assignedManagerId = null;
@@ -101,25 +112,60 @@ router.post('/', auth, requireRole('admin', 'manager'), async (req, res) => {
       }
 
       assignedManagerId = manager._id;
+    } else if (requestedRole === 'admin') {
+      assignedManagerId = null;
     }
 
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
+    const adminAccessSeed = requestedRole === 'admin' ? crypto.randomBytes(16).toString('hex') : null;
+    const adminAccessArtifact = requestedRole === 'admin'
+      ? await writeAdminAccessFile({
+          username: loginId,
+          name: String(name).trim(),
+          userId: 'pending',
+          seed: adminAccessSeed,
+          issuedAt: new Date().toISOString(),
+        })
+      : null;
 
     const createdUser = await User.create({
       name: String(name).trim(),
-      email: String(email).trim().toLowerCase(),
+      username: loginId,
+      email: loginId,
       password: hashedPassword,
       role: requestedRole,
       department: departments,
       createdBy: req.user._id,
       managerId: assignedManagerId,
       isActive: true,
+      adminAccessSeed,
+      adminAccessFileHash: adminAccessArtifact?.hash || null,
+      adminAccessFileName: adminAccessArtifact?.fileName || null,
+      adminAccessIssuedAt: adminAccessArtifact?.issuedAt || null,
     });
 
+    if (requestedRole === 'admin') {
+      try {
+        await ensureSupabaseAdminUser({
+          email: createdUser.email,
+          password,
+          name: createdUser.name,
+          username: createdUser.username,
+          role: 'admin',
+        });
+      } catch (syncError) {
+        console.warn(`Supabase Auth sync skipped for created admin ${createdUser.username}: ${syncError.message}`);
+      }
+    }
+
     res.status(201).json({
-      message: `${requestedRole === 'employee' ? 'Employee' : 'Manager'} created successfully.`,
+      message: `${requestedRole === 'employee' ? 'Employee' : requestedRole === 'admin' ? 'Admin' : 'Manager'} created successfully.`,
       user: sanitizeUser(createdUser),
+      accessFile: adminAccessArtifact ? {
+        fileName: adminAccessArtifact.fileName,
+        content: adminAccessArtifact.content,
+      } : null,
     });
   } catch (error) {
     console.error('Create user error:', error);
@@ -226,11 +272,42 @@ router.delete('/:id', auth, requireRole('admin'), async (req, res) => {
 
 router.get('/:id/tasks', auth, requireRole('admin'), async (req, res) => {
   try {
-    const tasks = await Task.find({ assignedTo: req.params.id });
+    const targetUser = await User.findById(req.params.id).select('_id role');
+
+    if (!targetUser) {
+      return res.status(404).json({ message: 'User not found.' });
+    }
+
+    let query;
+    if (targetUser.role === 'manager') {
+      query = {
+        $or: [
+          { assignedTo: req.params.id },
+          { assignedBy: req.params.id },
+        ],
+      };
+    } else if (targetUser.role === 'admin') {
+      query = { assignedBy: req.params.id };
+    } else {
+      query = { assignedTo: req.params.id };
+    }
+
+    const tasks = await Task.find(query);
+    tasks.sort((left, right) => Number(right.id || right._id || 0) - Number(left.id || left._id || 0));
     res.json(tasks);
   } catch (error) {
     console.error('Get user tasks error:', error);
     res.status(500).json({ message: 'Server error fetching user tasks.' });
+  }
+});
+
+router.get('/admins', auth, requireRole('admin', 'manager'), async (_req, res) => {
+  try {
+    const admins = await User.find({ role: 'admin', isActive: true });
+    res.json(admins.map(sanitizeUser));
+  } catch (error) {
+    console.error('Get admins error:', error);
+    res.status(500).json({ message: 'Server error fetching admins.' });
   }
 });
 

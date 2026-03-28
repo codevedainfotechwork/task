@@ -1,6 +1,7 @@
-import { createContext, useContext, useState, useCallback, useRef } from 'react';
+import { createContext, useContext, useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { CheckCircle2, AlertCircle, Info, X, Zap } from 'lucide-react';
+import { useSound } from './SoundContext';
 
 const ToastContext = createContext(null);
 
@@ -15,12 +16,22 @@ let toastId = 0;
 
 export function ToastProvider({ children }) {
   const [toasts, setToasts] = useState([]);
+  const { playSuccess, playError, playWarning, playClick } = useSound();
 
   const addToast = useCallback((message, type = 'info', duration = 3500) => {
     const id = ++toastId;
     setToasts(prev => [{ id, message, type }, ...prev]);
+    if (type === 'error') {
+      playError();
+    } else if (type === 'success') {
+      playSuccess();
+    } else if (type === 'cyber') {
+      playWarning();
+    } else {
+      playClick();
+    }
     setTimeout(() => setToasts(prev => prev.filter(t => t.id !== id)), duration);
-  }, []);
+  }, [playClick, playError, playSuccess, playWarning]);
 
   const removeToast = useCallback((id) => {
     setToasts(prev => prev.filter(t => t.id !== id));

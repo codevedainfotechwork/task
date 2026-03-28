@@ -3,6 +3,7 @@ import { format, parseISO } from 'date-fns';
 import { Search, Save, X, AlertCircle } from 'lucide-react';
 import { useTask } from '../../contexts/TaskContext';
 import { useToast } from '../../contexts/ToastContext';
+import { useAuth } from '../../contexts/AuthContext';
 import Modal from './Modal';
 import api from '../../api';
 import { useLanguage } from '../../contexts/LanguageContext';
@@ -11,6 +12,8 @@ export default function EditTaskModal({ isOpen, onClose, task }) {
   const { updateTask } = useTask();
   const { addToast } = useToast();
   const { t } = useLanguage();
+  const { currentUser } = useAuth();
+  const isManager = currentUser?.role === 'manager';
   
   const [formData, setFormData] = useState({
     title: '',
@@ -31,20 +34,25 @@ export default function EditTaskModal({ isOpen, onClose, task }) {
 
   useEffect(() => {
     if (task && isOpen) {
+      const lockedDepartment = isManager
+        ? (currentUser?.department?.[0] || task.department || '')
+        : (task.department || '');
       setFormData({
         title: task.title || '',
         description: task.description || '',
         dueDate: task.dueDate || format(new Date(), 'yyyy-MM-dd'),
         priority: task.priority || 'Medium',
-        department: task.department || '',
+        department: lockedDepartment,
         assignedTo: task.assignedTo || '',
         assigneeName: task.assigneeName || ''
       });
       setUserSearch(task.assigneeName || '');
-      fetchDepartments();
-      fetchAssignableUsers(task.department || '');
+      if (!isManager) {
+        fetchDepartments();
+      }
+      fetchAssignableUsers(lockedDepartment);
     }
-  }, [task, isOpen]);
+  }, [task, isOpen, currentUser, isManager]);
 
   const fetchDepartments = async () => {
     try {
@@ -68,12 +76,13 @@ export default function EditTaskModal({ isOpen, onClose, task }) {
 
   const filteredUsers = useMemo(() => {
     const term = userSearch.toLowerCase().trim();
+    const targetDepartment = formData.department || currentUser?.department?.[0] || '';
     return assignableUsers.filter(u => 
       (u.isActive !== false) && 
       (u.name.toLowerCase().includes(term) || u.email.toLowerCase().includes(term)) &&
-      (formData.department ? (u.department || []).includes(formData.department) : true)
+      (targetDepartment ? (u.department || []).includes(targetDepartment) : true)
     );
-  }, [assignableUsers, userSearch, formData.department]);
+  }, [assignableUsers, userSearch, formData.department, currentUser]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -116,23 +125,23 @@ export default function EditTaskModal({ isOpen, onClose, task }) {
       <form onSubmit={handleSubmit} className="space-y-5 px-1 py-1">
         {/* Title */}
         <div>
-          <label className="block text-[10px] font-mono font-semibold mb-2 tracking-widest text-cyan-400">{t('label_directive_desig')}</label>
+          <label className="label-cyber">{t('label_directive_desig')}</label>
           <input
             required
             value={formData.title}
             onChange={e => setFormData(f => ({ ...f, title: e.target.value }))}
-            className="w-full bg-[#030812] border border-white/10 text-white text-sm px-4 py-3 focus:outline-none focus:border-cyan-500/50 transition-colors rounded-xl shadow-inner placeholder:text-slate-700"
+            className="input-cyber"
             placeholder={t('ph_sys_update')}
           />
         </div>
 
         {/* Description */}
         <div>
-          <label className="block text-[10px] font-mono font-semibold mb-2 tracking-widest text-cyan-400">{t('label_description')}</label>
+          <label className="label-cyber">{t('label_description')}</label>
           <textarea
             value={formData.description}
             onChange={e => setFormData(f => ({ ...f, description: e.target.value }))}
-            className="w-full bg-[#030812] border border-white/10 text-white text-sm px-4 py-3 focus:outline-none focus:border-cyan-500/50 transition-colors rounded-xl shadow-inner placeholder:text-slate-700 h-24 resize-none"
+            className="input-cyber h-24 resize-none"
             placeholder={t('ph_mission_details')}
           />
         </div>
@@ -140,11 +149,11 @@ export default function EditTaskModal({ isOpen, onClose, task }) {
         <div className="grid grid-cols-2 gap-4">
           {/* Priority */}
           <div>
-            <label className="block text-[10px] font-mono font-semibold mb-2 tracking-widest text-cyan-400">{t('label_priority')}</label>
+            <label className="label-cyber">{t('label_priority')}</label>
             <select
               value={formData.priority}
               onChange={e => setFormData(f => ({ ...f, priority: e.target.value }))}
-              className="w-full bg-[#030812] border border-white/10 text-white text-sm px-4 py-3 focus:outline-none focus:border-cyan-500/50 transition-colors rounded-xl appearance-none cursor-pointer"
+              className="input-cyber appearance-none cursor-pointer"
             >
               <option value="Low">{t('priority_low')}</option>
               <option value="Medium">{t('priority_med')}</option>
@@ -154,38 +163,49 @@ export default function EditTaskModal({ isOpen, onClose, task }) {
 
           {/* Due Date */}
           <div>
-            <label className="block text-[10px] font-mono font-semibold mb-2 tracking-widest text-cyan-400">{t('label_due_date')}</label>
+            <label className="label-cyber">{t('label_due_date')}</label>
             <input
               type="date"
               required
               value={formData.dueDate}
               onChange={e => setFormData(f => ({ ...f, dueDate: e.target.value }))}
-              className="w-full bg-[#030812] border border-white/10 text-white text-sm px-4 py-3 focus:outline-none focus:border-cyan-500/50 transition-colors rounded-xl shadow-inner"
+              className="input-cyber"
             />
           </div>
         </div>
 
         {/* Department */}
         <div>
-          <label className="block text-[10px] font-mono font-semibold mb-2 tracking-widest text-cyan-400">{t('label_department')}</label>
-          <select
-            required
-            value={formData.department}
-            onChange={e => setFormData(f => ({ ...f, department: e.target.value, assignedTo: '', assigneeName: '' }))}
-            className="w-full bg-[#030812] border border-white/10 text-white text-sm px-4 py-3 focus:outline-none focus:border-cyan-500/50 transition-colors rounded-xl appearance-none cursor-pointer"
-          >
-            <option value="" disabled>{t('ph_select_dept')}</option>
-            {departments.map(d => (
-              <option key={d.id} value={d.name}>{t(`dept_${d.name.toLowerCase()}`) || d.name.toUpperCase()}</option>
-            ))}
-          </select>
+          <label className="label-cyber">{t('label_department')}</label>
+          {isManager ? (
+            <div className="rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/5 px-4 py-3">
+              <div className="text-sm font-semibold text-slate-900 dark:text-white">
+                {formData.department || currentUser?.department?.[0] || 'Department not set'}
+              </div>
+              <div className="mt-1 text-[11px] text-slate-500 dark:text-slate-400">
+                Locked to your department.
+              </div>
+            </div>
+          ) : (
+            <select
+              required
+              value={formData.department}
+              onChange={e => setFormData(f => ({ ...f, department: e.target.value, assignedTo: '', assigneeName: '' }))}
+              className="input-cyber appearance-none cursor-pointer"
+            >
+              <option value="" disabled>{t('ph_select_dept')}</option>
+              {departments.map(d => (
+                <option key={d.id} value={d.name}>{t(`dept_${d.name.toLowerCase()}`) || d.name.toUpperCase()}</option>
+              ))}
+            </select>
+          )}
         </div>
 
         {/* Assignee Search */}
         <div className="relative" ref={suggestionsRef}>
-          <label className="block text-[10px] font-mono font-semibold mb-2 tracking-widest text-cyan-400">{t('label_assign_to')}</label>
-          <div className="relative flex items-center px-4 py-3 bg-[#030812] border border-white/10 rounded-xl focus-within:border-cyan-500/50 transition-colors">
-            <Search size={16} className="text-slate-600 mr-2" />
+          <label className="label-cyber">{t('label_assign_to')}</label>
+          <div className="relative flex items-center pr-4 input-cyber">
+            <Search size={16} className="text-slate-400 ml-4 mr-2" />
             <input
               type="text"
               value={userSearch}
@@ -195,14 +215,14 @@ export default function EditTaskModal({ isOpen, onClose, task }) {
               }}
               onFocus={() => setShowSuggestions(true)}
               placeholder={t('ph_search_user')}
-              className="flex-1 bg-transparent text-sm text-white focus:outline-none placeholder:text-slate-700"
+              className="flex-1 bg-transparent py-3 text-sm text-slate-900 dark:text-white focus:outline-none placeholder:text-slate-400"
             />
           </div>
           
           {showSuggestions && (
-            <div className="absolute z-50 w-full mt-2 bg-[#050a14] border border-white/10 rounded-xl shadow-2xl max-h-48 overflow-y-auto">
+            <div className="absolute z-50 w-full mt-2 bg-white dark:bg-[#050a14] border border-slate-200 dark:border-white/10 rounded-xl shadow-2xl max-h-48 overflow-y-auto custom-scrollbar">
               {filteredUsers.length === 0 ? (
-                <div className="px-4 py-3 text-xs text-slate-500">{t('msg_no_users')}</div>
+                <div className="px-4 py-3 text-xs text-slate-500 font-mono tracking-widest uppercase">{t('msg_no_users')}</div>
               ) : (
                 filteredUsers.map(u => (
                   <div
@@ -212,10 +232,10 @@ export default function EditTaskModal({ isOpen, onClose, task }) {
                       setUserSearch(u.name);
                       setShowSuggestions(false);
                     }}
-                    className="px-4 py-3 hover:bg-white/5 cursor-pointer border-b border-white/5 last:border-0"
+                    className="px-4 py-3 hover:bg-slate-50 dark:hover:bg-white/5 cursor-pointer border-b border-slate-100 dark:border-white/5 last:border-0"
                   >
-                    <div className="text-sm font-semibold text-white">{u.name}</div>
-                    <div className="text-[10px] text-slate-500 font-mono">{u.email} • {u.role}</div>
+                    <div className="text-sm font-semibold text-slate-900 dark:text-white">{u.name}</div>
+                    <div className="text-[10px] text-slate-500 dark:text-slate-400 font-mono">{u.email} • {u.role.toUpperCase()}</div>
                   </div>
                 ))
               )}
@@ -224,20 +244,20 @@ export default function EditTaskModal({ isOpen, onClose, task }) {
         </div>
 
         {/* Actions */}
-        <div className="flex gap-4 pt-4 border-t border-white/5">
+        <div className="flex gap-4 pt-4 border-t border-slate-200 dark:border-white/10">
           <button
             type="button"
             onClick={onClose}
-            className="flex-1 py-3 rounded-xl text-xs font-mono font-bold text-slate-400 hover:bg-white/5 transition-colors"
+            className="flex-1 py-3 rounded-xl text-xs font-mono font-bold text-slate-500 hover:bg-slate-100 dark:hover:bg-white/5 transition-colors uppercase"
           >
-            {t('btn_cancel')}
+            {t('btn_cancel').toUpperCase()}
           </button>
           <button
             type="submit"
             disabled={submitting}
-            className="flex-1 py-3 rounded-xl text-xs font-mono font-bold tracking-widest bg-cyan-500 text-black hover:bg-cyan-400 transition-all shadow-lg flex items-center justify-center gap-2"
+            className="flex-1 py-3 rounded-xl text-xs font-mono font-bold tracking-widest bg-indigo-600 dark:bg-cyan-500 text-white dark:text-black hover:opacity-90 transition-all shadow-lg flex items-center justify-center gap-2"
           >
-            {submitting ? t('btn_updating') : <><Save size={14} /> {t('btn_save')}</>}
+            {submitting ? t('btn_updating').toUpperCase() : <><Save size={14} /> {t('btn_save').toUpperCase()}</>}
           </button>
         </div>
       </form>

@@ -1,12 +1,15 @@
-import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { useEffect } from 'react';
+import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { AuthProvider } from './contexts/AuthContext';
 import { TaskProvider } from './contexts/TaskContext';
 import { NotificationProvider } from './contexts/NotificationContext';
 import { ToastProvider } from './contexts/ToastContext';
+import { SoundProvider } from './contexts/SoundContext';
 import { LanguageProvider } from './contexts/LanguageContext';
 import { ThemeProvider } from './contexts/ThemeContext';
-import ErrorBoundary from './components/shared/ErrorBoundary';
+import { SettingsProvider } from './contexts/SettingsContext';
+import AppHeartbeat from './components/shared/AppHeartbeat';
 import { ProtectedRoute } from './routes/ProtectedRoute';
 
 // Layouts
@@ -24,6 +27,7 @@ import Signup from './pages/auth/Signup';
 import EmployeeDashboard from './pages/employee/EmployeeDashboard';
 import ManagerDashboard from './pages/manager/ManagerDashboard';
 import AdminDashboard from './pages/admin/AdminDashboard';
+import NotFound from './pages/public/NotFound';
 
 const pageVariants = {
   initial: { opacity: 0, x: 20 },
@@ -66,6 +70,7 @@ function AnimatedRoutes() {
           <Route element={<ProtectedRoute allowedRoles={['manager']}><DashboardLayout /></ProtectedRoute>}>
             <Route path="/manager"        element={<ManagerDashboard />} />
             <Route path="/manager/create" element={<ManagerDashboard />} />
+            <Route path="/manager/my-tasks" element={<ManagerDashboard />} />
             <Route path="/manager/team"   element={<ManagerDashboard />} />
           </Route>
 
@@ -76,10 +81,11 @@ function AnimatedRoutes() {
             <Route path="/admin/users"      element={<AdminDashboard />} />
             <Route path="/admin/departments" element={<AdminDashboard />} />
             <Route path="/admin/analytics"  element={<AdminDashboard />} />
+            <Route path="/admin/settings"  element={<AdminDashboard />} />
           </Route>
 
           {/* Default */}
-          <Route path="*" element={<Navigate to="/" replace />} />
+          <Route path="*" element={<NotFound />} />
         </Routes>
       </motion.div>
     </AnimatePresence>
@@ -87,19 +93,50 @@ function AnimatedRoutes() {
 }
 
 export default function App() {
+  useEffect(() => {
+    const blockContextMenu = event => event.preventDefault();
+
+    const blockInspectShortcuts = event => {
+      const key = String(event.key || '').toLowerCase();
+      const ctrlOrMeta = event.ctrlKey || event.metaKey;
+      const shift = event.shiftKey;
+
+      if (
+        key === 'f12' ||
+        (ctrlOrMeta && shift && ['i', 'j', 'c'].includes(key)) ||
+        (ctrlOrMeta && key === 'u')
+      ) {
+        event.preventDefault();
+      }
+    };
+
+    document.addEventListener('contextmenu', blockContextMenu);
+    document.addEventListener('keydown', blockInspectShortcuts);
+
+    return () => {
+      document.removeEventListener('contextmenu', blockContextMenu);
+      document.removeEventListener('keydown', blockInspectShortcuts);
+    };
+  }, []);
+
   return (
     <BrowserRouter>
       <LanguageProvider>
         <ThemeProvider>
-          <ToastProvider>
-            <AuthProvider>
-              <TaskProvider>
-                <NotificationProvider>
-                  <AnimatedRoutes />
-                </NotificationProvider>
-              </TaskProvider>
-            </AuthProvider>
-          </ToastProvider>
+          <SoundProvider>
+            <ToastProvider>
+              <AuthProvider>
+                <SettingsProvider>
+                  <TaskProvider>
+                    <NotificationProvider>
+                      <AppHeartbeat />
+                      <AnimatedRoutes />
+                    </NotificationProvider>
+                  </TaskProvider>
+                </SettingsProvider>
+              </AuthProvider>
+            </ToastProvider>
+          </SoundProvider>
         </ThemeProvider>
       </LanguageProvider>
     </BrowserRouter>

@@ -5,6 +5,11 @@
   "main": "index.js",
   "scripts": {
     "start": "node index.js",
+    "server": "nodemon index.js",
+    "db:init": "node scripts/init_supabase_db.js",
+    "admin:file:generate": "node scripts/generate_admin_access_file.js",
+    "storage:migrate-local": "node scripts/migrate_local_uploads_to_supabase.js",
+    "users:temp-reset": "node scripts/reset_all_temp_credentials.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
@@ -19,9 +24,10 @@
     "express-rate-limit": "^8.3.1",
     "express-validator": "^7.3.1",
     "helmet": "^8.1.0",
-    "jsonwebtoken": "^9.0.3",
-    "mongoose": "^9.3.1",
+    "multer": "^1.4.5-lts.2",
     "node-cron": "^4.2.1",
-    "socket.io": "^4.8.3"
+    "pg": "^8.20.0",
+    "socket.io": "^4.8.3",
+    "web-push": "^3.6.7"
   }
 }

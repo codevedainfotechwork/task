@@ -1,19 +1,28 @@
 import axios from 'axios';
 
-const API_PORT = 5000; 
-export const BASE_URL = import.meta.env.VITE_API_URL || 'https://task-backend-j5nn.onrender.com';
+const API_PORT = 5000;
+const fallbackBaseUrl = import.meta.env.DEV
+  ? `http://${window.location.hostname}:${API_PORT}`
+  : window.location.origin;
+
+export const BASE_URL = import.meta.env.VITE_API_URL || fallbackBaseUrl;
 
 const api = axios.create({
-  baseURL: `${BASE_URL}/api`,
-  headers: { 'Content-Type': 'application/json' }
+  baseURL: `${BASE_URL}/api`
 });
 
-// Add a request interceptor to inject the JWT token
+// Add a request interceptor to inject the session token
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('token');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
+    }
+    // Let browser set correct boundary for FormData uploads
+    if (config.data instanceof FormData) {
+      delete config.headers['Content-Type'];
+    } else if (!config.headers['Content-Type']) {
+      config.headers['Content-Type'] = 'application/json';
     }
     return config;
   },

@@ -7,13 +7,15 @@ export function ThemeProvider({ children }) {
   const [theme, setTheme] = useState(() => {
     const saved = localStorage.getItem('theme');
     if (saved) return saved;
-    // Check system preference if no saved theme
-    return window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+    // Default to 'light' as requested
+    return 'light';
   });
 
   useEffect(() => {
-    // Apply theme to document element
+    // Apply theme to document element using data-theme attribute
     const root = window.document.documentElement;
+    root.setAttribute('data-theme', theme);
+    // Also keep the class for backward compatibility with some selectors if needed
     root.classList.remove('light', 'dark');
     root.classList.add(theme);
     localStorage.setItem('theme', theme);

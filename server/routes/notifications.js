@@ -10,28 +10,31 @@ router.get('/', auth, async (req, res) => {
     const notifications = await Notification.find({ userId: req.user._id });
     const enrichedNotifications = await Promise.all(
       notifications.map(async (notification) => {
+        const raw = notification.toObject ? notification.toObject() : notification;
         if (!notification.taskId) {
-          return notification;
+          return raw;
         }
 
         const task = await Task.findById(notification.taskId);
-        const isTransferNotification = /^Task transferred to you:/i.test(notification.message || '');
+        const isTransferNotification = /^Task transferred to you:/i.test(raw.message || '');
+        const fallbackType = isTransferNotification ? 'task-transferred' : 'task-assigned';
 
-        return {
-          ...notification.toObject(),
-          title: isTransferNotification ? 'Task Transferred To You' : 'New Task Assigned',
-          taskTitle: task?.title || notification.message,
-          description: task?.description || '',
-          dueDate: task?.dueDate || null,
-          type: isTransferNotification ? 'task-transferred' : 'task-assigned',
-          transferMeta: isTransferNotification
+          return {
+          ...raw,
+          title: raw.title || (isTransferNotification ? 'Task Transferred To You' : 'New Task Assigned'),
+          taskTitle: raw.taskTitle || task?.title || raw.message,
+          description: raw.description || task?.description || '',
+          dueDate: raw.dueDate || task?.dueDate || null,
+          reminderTime: raw.reminderTime || task?.reminderTime || null,
+          type: raw.type || fallbackType,
+          transferMeta: raw.transferMeta || (isTransferNotification
             ? {
                 fromManagerName: task?.transferredFromManagerName || null,
                 toManagerName: task?.transferredToManagerName || null,
                 department: task?.department || null,
                 transferredAt: task?.transferredAt || null,
               }
-            : null,
+            : null),
         };
       })
     );

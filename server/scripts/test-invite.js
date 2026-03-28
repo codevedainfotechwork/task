@@ -10,7 +10,7 @@ async function test() {
     const loginRes = await axios.post(`${BASE}/auth/login`, {
       email: 'shrutilathiya18@gmail.com',
       password: 'password',
-      adminToken: process.env.ADMIN_SECRET_TOKEN,
+      adminAuthFile: null,
       portalRole: 'admin'
     });
     const jwt = loginRes.data.token;

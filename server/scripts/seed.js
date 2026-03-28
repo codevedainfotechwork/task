@@ -2,26 +2,21 @@ require('dotenv').config();
 const bcrypt = require('bcryptjs');
 const User = require('../models/User');
 const Task = require('../models/Task');
-const Notification = require('../models/Notification');
 const Department = require('../models/Department');
-const pool = require('../config/db');
+const { connectDB, pool } = require('../config/db');
+const { ensureCoreSchema } = require('../config/schema');
 
 async function seed() {
   try {
-    await Department.ensureSchema();
+    await connectDB();
+    await ensureCoreSchema(pool);
 
-    console.log('Connected to MySQL. Clearing existing data...');
+    console.log('Connected to Supabase Postgres. Clearing existing data...');
     
     // Clear tables (order matters due to foreign keys)
-    await pool.execute('DELETE FROM notifications');
-    await pool.execute('DELETE FROM tasks');
-    await pool.execute('DELETE FROM departments');
+    await pool.query('TRUNCATE TABLE notifications, task_attachments, tasks, help_requests, activity_logs, departments, settings RESTART IDENTITY CASCADE');
     
-    // To delete all users when there are self-referencing foreign keys (createdBy, managerId),
-    // we need to temporarily disable foreign key checks, delete, then re-enable.
-    await pool.execute('SET FOREIGN_KEY_CHECKS = 0');
-    await pool.execute('DELETE FROM users');
-    await pool.execute('SET FOREIGN_KEY_CHECKS = 1');
+    await pool.query('TRUNCATE TABLE users RESTART IDENTITY CASCADE');
 
     console.log('Creating Departments...');
     const depts = ['Engineering', 'Design', 'Marketing', 'Sales', 'HR', 'Legal'];
@@ -35,6 +30,7 @@ async function seed() {
 
     const admin = await User.create({
       name: 'Shruti Admin',
+      username: 'admin',
       email: 'shrutilathiya18@gmail.com',
       password: hashPw,
       role: 'admin',
@@ -45,6 +41,7 @@ async function seed() {
     console.log('Creating Managers...');
     const manager1 = await User.create({
       name: 'Bob Manager',
+      username: 'manager',
       email: 'manager@demo.com',
       password: hashPw,
       role: 'manager',
@@ -55,6 +52,7 @@ async function seed() {
 
     const manager2 = await User.create({
       name: 'Sarah Manager',
+      username: 'manager2',
       email: 'manager2@demo.com',
       password: hashPw,
       role: 'manager',
@@ -66,6 +64,7 @@ async function seed() {
     console.log('Creating Employees...');
     const emp1 = await User.create({
       name: 'Alice Employee',
+      username: 'employee',
       email: 'employee@demo.com',
       password: hashPw,
       role: 'employee',
@@ -77,6 +76,7 @@ async function seed() {
 
     const emp2 = await User.create({
       name: 'Charlie Employee',
+      username: 'charlie',
       email: 'charlie@demo.com',
       password: hashPw,
       role: 'employee',
@@ -95,8 +95,8 @@ async function seed() {
       department: 'Engineering',
       startDate: new Date().toISOString().split('T')[0],
       dueDate: new Date(Date.now() + 86400000 * 3).toISOString().split('T')[0], // +3 days
-      priority: 'high',
-      status: 'pending'
+      priority: 'High',
+      status: 'Pending'
     });
 
     const t2 = await Task.create({
@@ -107,8 +107,8 @@ async function seed() {
       department: 'Design',
       startDate: new Date().toISOString().split('T')[0],
       dueDate: new Date(Date.now() - 86400000 * 2).toISOString().split('T')[0], // -2 days (overdue)
-      priority: 'medium',
-      status: 'in-progress'
+      priority: 'Medium',
+      status: 'In Progress'
     });
 
     // Create a completed task 35 days ago to test CRON
@@ -120,8 +120,8 @@ async function seed() {
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         'API Documentation', 'Document standard endpoints.',
-        emp1._id, manager1._id, 'Engineering', 'completed',
-        oldDate, oldDate, 'low', completedAtStr
+        emp1._id, manager1._id, 'Engineering', 'Completed',
+        oldDate, oldDate, 'Low', completedAtStr
       ]
     );
 

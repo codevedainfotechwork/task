@@ -1,11 +1,14 @@
 import { useLanguage } from '../../contexts/LanguageContext';
+import { useSettings } from '../../contexts/SettingsContext';
 
 export default function Signup() {
   const navigate = useNavigate();
   const { t } = useLanguage();
+  const { settings } = useSettings();
   const [form, setForm] = useState({ name: '', email: '', password: '', role: 'employee' });
   const [showPw, setShowPw] = useState(false);
   const [loading, setLoading] = useState(false);
+  const brandName = settings?.companyName?.trim() || 'TASKFLOW';
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -29,9 +32,9 @@ export default function Signup() {
       >
         <div className="flex items-center justify-center gap-3 mb-8">
           <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-brand-500 to-purple-600 flex items-center justify-center shadow-glow-brand">
-            <span className="text-white font-bold text-lg">{t('brand_name').substring(0,2).toUpperCase()}</span>
+            <span className="text-white font-bold text-lg">{brandName.substring(0,2).toUpperCase()}</span>
           </div>
-          <span className="text-2xl font-bold text-slate-100">{t('brand_name')}</span>
+          <span className="text-2xl font-bold text-slate-100">{brandName}</span>
         </div>
 
         <div className="glass-card rounded-2xl border border-white/10 shadow-glass p-8">
@@ -47,7 +50,7 @@ export default function Signup() {
             </div>
             <div>
               <label className="block text-xs font-medium text-slate-400 mb-1.5">{t('login_email')}</label>
-              <input type="email" value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} placeholder={t('ph_example_email')} required className="input-base" />
+              <input type="text" value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} placeholder={t('ph_example_email')} required className="input-base" />
             </div>
             <div>
               <label className="block text-xs font-medium text-slate-400 mb-1.5">{t('label_user_role').replace('// ', '')}</label>

@@ -5,35 +5,35 @@ export default function FilterBar({ statusFilter, setStatusFilter, priorityFilte
   return (
     <div className="flex flex-wrap items-center gap-3">
       {/* Status tabs */}
-      <div className="flex items-center gap-1 bg-white/5 border border-white/10 rounded-xl p-1">
+      <div className="flex items-center gap-1 bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl p-1">
         {STATUS_OPTIONS.map(s => (
           <button
             key={s}
             onClick={() => setStatusFilter(s)}
-            className={`text-xs px-3 py-1.5 rounded-lg font-medium transition-all ${
+            className={`text-xs px-3 py-1.5 rounded-lg font-bold font-mono tracking-widest transition-all ${
               statusFilter === s
-                ? 'bg-brand-500 text-white shadow-glow-brand'
-                : 'text-slate-400 hover:text-slate-200'
+                ? 'bg-indigo-600 dark:bg-cyan-500 text-white dark:text-black shadow-lg'
+                : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
             }`}
           >
-            {s}
+            {s.toUpperCase()}
           </button>
         ))}
       </div>
 
       {/* Priority tabs */}
-      <div className="flex items-center gap-1 bg-white/5 border border-white/10 rounded-xl p-1">
+      <div className="flex items-center gap-1 bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl p-1">
         {PRIORITY_OPTIONS.map(p => (
           <button
             key={p}
             onClick={() => setPriorityFilter(p)}
-            className={`text-xs px-3 py-1.5 rounded-lg font-medium transition-all ${
+            className={`text-xs px-3 py-1.5 rounded-lg font-bold font-mono tracking-widest transition-all ${
               priorityFilter === p
-                ? 'bg-purple-600 text-white shadow-glow-purple'
-                : 'text-slate-400 hover:text-slate-200'
+                ? 'bg-violet-600 dark:bg-purple-500 text-white shadow-lg'
+                : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
             }`}
           >
-            {p}
+            {p.toUpperCase()}
           </button>
         ))}
       </div>

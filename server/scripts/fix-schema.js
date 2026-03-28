@@ -8,6 +8,18 @@ async function fix() {
     console.log('  status -> VARCHAR(20) OK');
     await pool.execute('ALTER TABLE tasks MODIFY COLUMN priority VARCHAR(10) DEFAULT "Medium"');
     console.log('  priority -> VARCHAR(10) OK');
+    try {
+      await pool.execute('ALTER TABLE tasks ADD COLUMN employeeComment TEXT NULL');
+      console.log('  employeeComment -> TEXT NULL OK');
+    } catch (e) {
+      if (e.code !== 'ER_DUP_FIELDNAME') throw e;
+    }
+    try {
+      await pool.execute('ALTER TABLE tasks ADD COLUMN employeeCommentAt DATETIME NULL');
+      console.log('  employeeCommentAt -> DATETIME NULL OK');
+    } catch (e) {
+      if (e.code !== 'ER_DUP_FIELDNAME') throw e;
+    }
     console.log('Schema updated successfully!');
     process.exit(0);
   } catch (err) {

@@ -1,16 +1,44 @@
-# React + Vite
+# Task Manager
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+## Supabase Setup
 
-Currently, two official plugins are available:
+This project now uses Supabase for:
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+- Postgres database storage
+- admin authentication
+- task attachment uploads
+- company logo storage
 
-## React Compiler
+### Required environment variables
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+Frontend:
 
-## Expanding the ESLint configuration
+- `VITE_API_URL`
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+Server:
+
+- `SUPABASE_URL`
+- `SUPABASE_DB_URL`
+- `SUPABASE_SERVICE_ROLE_KEY`
+- `SUPABASE_STORAGE_BUCKET`
+- `JWT_SECRET`
+
+### Notes
+
+- The app still uses custom JWT auth.
+- JWT has been removed from the runtime auth flow; the app now uses opaque session tokens.
+- Employee and manager login still uses the app's custom users table.
+- Admin login is now backed by Supabase Auth and is kept in sync from the server bootstrap and admin user management routes.
+- Task attachments and settings logos are stored in Supabase Storage.
+- To move old local files into Supabase Storage, run `npm run storage:migrate-local` from `server/`.
+- To reset all user passwords to temporary values and export a credential sheet, run `npm run users:temp-reset` from `server/`.
+- Use [`supabase_schema.sql`](/c:/Users/LENOVO/Desktop/task%20manager%20(6)/task%20manager%20(3)/task%20manager/supabase_schema.sql) and [`supabase_seed.sql`](/c:/Users/LENOVO/Desktop/task%20manager%20(6)/task%20manager%20(3)/task%20manager/supabase_seed.sql) in the Supabase SQL editor.
+- Run `npm run build` after making changes to confirm the client still compiles.
+
+### Production Deploy
+
+- Build the frontend with `npm run build`.
+- Deploy the backend with `npm start` from `server/`.
+- Set `VITE_API_URL` to your backend URL if the frontend and backend are deployed on different domains.
+- Set `CORS_ORIGIN` and `FRONTEND_URL` on the backend to your production frontend URL.
+- In same-origin deployments, the frontend now falls back to the current site origin instead of `localhost`.

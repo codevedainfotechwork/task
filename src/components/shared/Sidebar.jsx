@@ -8,6 +8,9 @@ import {
 import { useAuth } from '../../contexts/AuthContext';
 
 import { useLanguage } from '../../contexts/LanguageContext';
+import { useTheme } from '../../contexts/ThemeContext';
+import { useSettings } from '../../contexts/SettingsContext';
+import { resolveAssetUrl } from '../../utils/assetUrl';
 
 const NAV_BASE = {
   employee: [
@@ -16,6 +19,7 @@ const NAV_BASE = {
   manager: [
     { to: '/manager', icon: LayoutDashboard, key: 'nav_dashboard', end: true },
     { to: '/manager/create', icon: PlusCircle, key: 'nav_create_task' },
+    { to: '/manager/my-tasks', icon: ClipboardList, key: 'title_my_tasks', end: true },
     { to: '/manager/team',   icon: Users,     key: 'nav_team' },
   ],
   admin: [
@@ -28,9 +32,9 @@ const NAV_BASE = {
 };
 
 const ROLE_CONFIG = {
-  employee: { label: 'EMPLOYEE', color: 'text-cyan-400',   glow: 'rgba(0,212,255,0.2)',   bg: 'rgba(0,212,255,0.08)' },
-  manager:  { label: 'MANAGER',  color: 'text-purple-400', glow: 'rgba(191,0,255,0.2)',  bg: 'rgba(191,0,255,0.08)' },
-  admin:    { label: 'ADMIN',    color: 'text-emerald-400', glow: 'rgba(0,255,136,0.2)',  bg: 'rgba(0,255,136,0.08)' },
+  employee: { label: 'EMPLOYEE', color: 'text-cyan-600 dark:text-cyan-400',   glow: 'rgba(6,182,212,0.2)',   bg: 'rgba(6,182,212,0.1)' },
+  manager:  { label: 'MANAGER',  color: 'text-indigo-600 dark:text-indigo-400', glow: 'rgba(99,102,241,0.2)',  bg: 'rgba(99,102,241,0.1)' },
+  admin:    { label: 'ADMIN',    color: 'text-emerald-600 dark:text-emerald-400', glow: 'rgba(16,185,129,0.2)',  bg: 'rgba(16,185,129,0.1)' },
 };
 
 export default function Sidebar({ collapsed, setCollapsed, mobileOpen, setMobileOpen }) {
@@ -43,7 +47,11 @@ export default function Sidebar({ collapsed, setCollapsed, mobileOpen, setMobile
     label: t(link.key)
   }));
   
+  const { theme } = useTheme();
+  const { settings } = useSettings();
+  const isDark = theme === 'dark';
   const roleCfg = ROLE_CONFIG[currentUser?.role] || ROLE_CONFIG.employee;
+  const brandName = settings?.companyName?.trim() || 'TASKFLOW';
 
   const handleLogout = () => { logout(); navigate('/login'); };
 
@@ -70,7 +78,7 @@ export default function Sidebar({ collapsed, setCollapsed, mobileOpen, setMobile
           background: 'var(--bg-card)',
           borderRight: '1px solid var(--border-subtle)',
           backdropFilter: 'blur(24px)',
-          boxShadow: '4px 0 40px rgba(0,0,0,0.1), inset -1px 0 0 var(--border-subtle)',
+          boxShadow: 'var(--shadow-lg)',
         }}
       >
       {/* Scan-line overlay */}
@@ -80,14 +88,18 @@ export default function Sidebar({ collapsed, setCollapsed, mobileOpen, setMobile
       <div className="relative z-10 flex items-center gap-3 px-4 py-5 border-b" style={{ borderColor: 'rgba(0,212,255,0.08)' }}>
         <motion.div
           whileHover={{ scale: 1.1, rotate: 5 }}
-          className="w-9 h-9 rounded-xl flex-shrink-0 flex items-center justify-center relative"
+          className="w-9 h-9 rounded-xl flex-shrink-0 flex items-center justify-center relative overflow-hidden"
           style={{
             background: 'linear-gradient(135deg, var(--accent-glow), rgba(191,0,255,0.15))',
             border: '1px solid var(--border-glow)',
             boxShadow: '0 0 20px var(--border-glow)',
           }}
         >
-          <Zap size={16} className="text-cyan-300" />
+          {settings?.logoDataUrl ? (
+            <img src={resolveAssetUrl(settings.logoDataUrl)} alt="Brand Logo" className="w-full h-full object-cover" />
+          ) : (
+            <Zap size={16} className="text-cyan-300" />
+          )}
           <div className="absolute inset-0 rounded-xl animate-glow-pulse" style={{ background: 'radial-gradient(circle, rgba(0,212,255,0.1), transparent)' }} />
         </motion.div>
 
@@ -100,8 +112,8 @@ export default function Sidebar({ collapsed, setCollapsed, mobileOpen, setMobile
               transition={{ duration: 0.2 }}
               className="overflow-hidden"
             >
-              <span className="font-bold text-slate-100 text-base tracking-wide whitespace-nowrap neon-text-blue">
-                TaskFlow
+              <span className="font-bold text-slate-900 dark:text-slate-100 text-base tracking-wide whitespace-nowrap neon-text-blue">
+                {brandName}
               </span>
               <div className="text-[9px] font-mono tracking-widest mt-0.5 whitespace-nowrap" style={{ color: 'rgba(0,212,255,0.5)' }}>
                 {t('label_cyber_edition')}
@@ -113,9 +125,7 @@ export default function Sidebar({ collapsed, setCollapsed, mobileOpen, setMobile
         <button
           onClick={() => setCollapsed(c => !c)}
           className="ml-auto flex-shrink-0 p-1 rounded-lg transition-all duration-200"
-          style={{ color: 'rgba(0,212,255,0.5)' }}
-          onMouseEnter={e => e.currentTarget.style.color = '#00d4ff'}
-          onMouseLeave={e => e.currentTarget.style.color = 'rgba(0,212,255,0.5)'}
+          style={{ color: isDark ? 'rgba(0,212,255,0.5)' : 'var(--text-muted)' }}
         >
           {collapsed ? <ChevronRight size={15} /> : <ChevronLeft size={15} />}
         </button>
@@ -124,13 +134,20 @@ export default function Sidebar({ collapsed, setCollapsed, mobileOpen, setMobile
       {/* Role badge */}
       {!collapsed && (
         <div className="relative z-10 px-4 py-3">
-          <div className="px-3 py-2 rounded-lg" style={{ background: roleCfg.bg, border: `1px solid ${roleCfg.glow}` }}>
+          <div 
+            className="px-3 py-2 rounded-lg transition-all duration-300" 
+            style={{ 
+              background: isDark ? roleCfg.bg : 'var(--primary-glow)', 
+              border: `1px solid ${isDark ? roleCfg.glow : 'var(--border-subtle)'}`,
+              boxShadow: isDark ? `0 0 15px ${roleCfg.glow}` : 'none'
+            }}
+          >
             <div className="flex items-center gap-2">
-              <div className="w-1.5 h-1.5 rounded-full animate-pulse-neon" style={{ background: roleCfg.glow.replace('0.2', '1') }} />
-              <span className={`text-[10px] font-mono font-bold tracking-widest ${roleCfg.color}`}>{t(`badge_${currentUser?.role}`)}</span>
+              <div className="w-1.5 h-1.5 rounded-full animate-pulse-neon" style={{ background: isDark ? roleCfg.glow.replace('0.2', '1') : 'var(--primary)' }} />
+              <span className={`text-[10px] font-mono font-bold tracking-widest ${isDark ? roleCfg.color : 'text-slate-900'}`}>{t(`badge_${currentUser?.role}`)}</span>
             </div>
             {currentUser?.role === 'manager' && (
-              <p className="mt-2 text-[10px] font-mono tracking-[0.16em] text-purple-200/80">
+              <p className="mt-2 text-[10px] font-mono tracking-[0.16em] text-slate-600 dark:text-purple-200/80 font-bold uppercase">
                 {(currentUser?.department?.length ? currentUser.department : [t('unassigned_caps')]).join(' / ').toUpperCase()} {t('label_dept_manager_caps')}
               </p>
             )}
@@ -181,10 +198,10 @@ export default function Sidebar({ collapsed, setCollapsed, mobileOpen, setMobile
                 {currentUser?.avatar}
               </div>
               <div className="overflow-hidden">
-                <p className="text-xs font-semibold text-slate-200 truncate">{currentUser?.name}</p>
-                <p className="text-[10px] truncate" style={{ color: 'rgba(0,212,255,0.6)', fontFamily: 'monospace' }}>{currentUser?.email}</p>
+                <p className="text-xs font-bold text-slate-900 dark:text-slate-200 truncate">{currentUser?.name}</p>
+                <p className="text-[10px] truncate text-slate-600 dark:text-slate-400 font-bold" style={{ fontFamily: 'monospace' }}>{currentUser?.email}</p>
                 {currentUser?.role === 'manager' && (
-                  <p className="mt-1 text-[10px] truncate text-purple-300/80" style={{ fontFamily: 'monospace' }}>
+                  <p className="mt-1 text-[10px] truncate text-indigo-600 dark:text-purple-300/80 font-bold" style={{ fontFamily: 'monospace' }}>
                     {(currentUser?.department?.length ? currentUser.department : [t('unassigned_caps')]).join(', ')} {t('label_dept_manager')}
                   </p>
                 )}

@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 
 const LanguageContext = createContext();
 
@@ -18,6 +19,7 @@ const translations = {
     nav_all_users: 'ALL USERS',
     nav_departments: 'DEPARTMENTS',
     nav_analytics: 'ANALYTICS',
+    nav_settings: 'SETTINGS',
     nav_logout: 'LOGOUT',
     nav_overview: 'OVERVIEW',
     user_mgmt_tab: 'USER MANAGEMENT',
@@ -46,7 +48,7 @@ const translations = {
     sys_ops_os: 'Enterprise Operations OS v2.4',
     
     // Stats
-    stat_active: 'ACTIVE',
+    stat_active: 'IN PROGRESS',
     stat_pending: 'PENDING',
     stat_completed: 'COMPLETED',
     stat_overdue: 'OVERDUE',
@@ -63,7 +65,6 @@ const translations = {
     task_assigned_to: 'ASSIGNED TO',
     task_department: 'DEPARTMENT',
     task_edit: 'EDIT',
-    task_transfer: 'TRANSFER',
     task_directive_label: 'TASK DIRECTIVE',
     assignee_label: 'ASSIGNEE',
     level_label: 'LEVEL',
@@ -75,13 +76,14 @@ const translations = {
     
     // Priorities
     priority_low: 'LOW',
-    priority_med: 'MEDIUM',
+    priority_medium: 'MEDIUM',
     priority_high: 'HIGH',
     
     // Statuses
     status_pending: 'PENDING',
     status_active: 'IN PROGRESS',
     status_done: 'COMPLETED',
+    status_overdue: 'OVERDUE',
     online_status: 'ONLINE',
     revoked_status: 'REVOKED',
     
@@ -98,26 +100,25 @@ const translations = {
     btn_revoke: 'REVOKE',
     btn_grant: 'GRANT',
     btn_view_tasks: 'VIEW TASKS',
-    btn_transfer: 'TRANSFER',
     btn_add_employee: 'ADD EMPLOYEE',
     btn_deploy_task: 'DEPLOY TASK',
     btn_initiate: 'INITIATE',
     btn_initialize: 'INITIALIZE CONNECTION',
     btn_login: 'LOGIN',
-    btn_create_user: 'CREATE USER',
-    btn_assign_task: 'ASSIGN TASK',
-    btn_transmit: 'TRANSMIT',
-    btn_purge: 'PURGE TASK',
+    btn_create_user: 'ADD NEW USER',
+    btn_assign_task: 'DELEGATE TASK',
+    btn_transmit: '⚡ SEND TASK',
+    btn_purge: 'DELETE FOREVER',
     btn_update: 'UPDATING...',
     btn_creating: 'CREATING...',
     
     // Placeholders & Search
-    ph_search_name: 'Search by name or email...',
+    ph_search_name: 'Search by name or username...',
     ph_enter_dept: 'Enter department name...',
     ph_task_title: 'Task title...',
     ph_task_desc: 'Mission details...',
     ph_full_name: 'Full Name',
-    ph_email: 'Email address',
+    ph_email: 'Username',
     ph_password: 'Password',
     ph_new_password: 'New password',
     ph_confirm_password: 'Confirm password',
@@ -128,15 +129,18 @@ const translations = {
     ph_brief_description: 'Brief description (optional)',
     ph_select_manager: 'Select Manager...',
     ph_select_dept: 'Select Department...',
-    ph_admin_token: 'Required for terminal access',
+    ph_admin_token: 'Admin access file',
     
     // Messages & Alerts
     msg_loading: 'LOADING...',
     msg_no_tasks: 'NO DIRECTIVES FOUND',
     msg_no_tasks_found: 'No tasks found',
     msg_tasks_appear_here: 'Tasks will appear here.',
+    all_priorities: 'ALL PRIORITIES',
+    msg_try_clearing_filters: 'Try clearing your active filters.',
     msg_task_update_success: 'Task marked as {status}',
     msg_task_updated: 'Task updated successfully',
+    msg_task_purged_success: 'Task deleted successfully',
     msg_failed_update: 'Failed to update task',
     msg_title_required: 'Title is required',
     msg_assignee_required: 'Assignee is required',
@@ -150,7 +154,7 @@ const translations = {
     overdue_tasks_alert: 'OVERDUE TASKS REQUIRE IMMEDIATE ATTENTION',
     msg_unassigned: 'Unassigned',
     msg_no_employees_found: 'No employees found',
-    msg_no_employees_desc: 'Try another name or email, or add a new employee.',
+    msg_no_employees_desc: 'Try another name or username, or add a new employee.',
     
     // Departments
     dept_hr: 'HR',
@@ -174,30 +178,16 @@ const translations = {
     role_selector_title: 'SELECT ROLE',
     
     // Manager Specific
-    all_depts: 'ALL DEPARTMENTS',
-    cross_dept_cmd: 'CROSS-DEPARTMENT COMMAND',
-    dept_mgr_dir: 'Department manager directory',
-    cmd_roster: 'command roster',
-    hide_tfr_list: 'HIDE TRANSFER LIST',
-    open_tfr_list: 'OPEN TRANSFER LIST',
-    tfr_task_ready: 'transferable tasks ready',
-    tfr_incoming: 'INCOMING',
-    tfr_sent: 'SENT',
-    tfr_task_list: 'TRANSFER TASK LIST',
-    tfr_directives: 'Transferred directives',
-    tfr_from: 'From Manager',
-    tfr_to: 'To Manager',
-    tfr_timestamp: 'Transferred',
     target_dept: 'TARGET DEPARTMENT',
-    target_manager: 'TARGET MANAGER',
-    receiving_manager: 'Receiving Manager',
     
     // Admin Specific
     title_create_user: 'CREATE NEW USER',
     title_assign_task: 'ASSIGN NEW TASK',
     title_reset_password: 'RESET USER PASSWORD',
+    title_reset_password_caps: 'RESET USER PASSWORD',
     title_delete_dept: 'DELETE DEPARTMENT?',
     title_sys_auth: 'SYSTEM AUTHORIZATION REQUIRED',
+    btn_reset_password_caps: 'RESET PASSWORD',
     auth_final: 'Final Authorization',
     detected_conflicts: 'DETECTED CONFLICTS',
     irrevocable_action: 'CRITICAL: This action is irreversible.',
@@ -205,6 +195,8 @@ const translations = {
     label_active_count: 'ACTIVE',
     dept_workload: 'STACKED DEPARTMENT WORKLOAD',
     status_split: 'GLOBAL STATUS SPLIT',
+    label_dept_workload: 'DEPARTMENT WORKLOAD DISTRIBUTION',
+    label_global_split: 'GLOBAL STATUS BREAKDOWN',
     
     // Login & Onboarding
     identify_clearance: 'IDENTIFY LOGIN CLEARANCE',
@@ -221,14 +213,14 @@ const translations = {
     link_expired: 'LINK EXPIRED',
     already_activated: 'ALREADY ACTIVATED',
     onboarding_footer: 'THIS IS A ONE-TIME SECURE ACTIVATION LINK. DO NOT SHARE WITH UNAUTHORIZED PERSONNEL.',
-    login_email: 'Email',
+    login_email: 'Username',
     login_password: 'Password',
     back_to_root: 'Back to Root',
     initiate_btn: 'Initiate',
     admin_workspace: 'Admin Workspace',
     manager_workspace: 'Manager Workspace',
     employee_workspace: 'Employee Workspace',
-    sys_decrypt_token: 'System Decrypt Token',
+    sys_decrypt_token: 'Admin Access File',
     auth_prohibited: 'UNAUTHORIZED ACCESS IS STRICTLY PROHIBITED.',
     auth_logged: 'ALL OPERATIONS ARE LOGGED.',
     init_conn_btn: 'LOGIN',
@@ -238,7 +230,7 @@ const translations = {
     subtitle_join_today: 'Join Taskflow today',
     label_full_name: 'Full Name',
     ph_john_doe: 'John Doe',
-    ph_example_email: 'you@example.com',
+    ph_example_email: 'your_username',
     msg_already_have_account: 'Already have an account?',
     link_signin: 'Sign in',
     btn_create_account: 'Create Account',
@@ -291,20 +283,17 @@ const translations = {
     err_pass_short: 'Passphrase must be at least 6 characters.',
     err_name_req: 'Department name is required.',
     err_select_manager: 'Select a manager for the employee',
-    msg_tfr_params_err: 'Select a task, department, and manager for transfer.',
+    err_name_req: 'Department name is required.',
+    err_select_manager: 'Select a manager for the employee',
 
     // Additional Dashboard Keys
-    dept_mgr_desc: 'View each department manager and hand off a directive to another manager.',
     loading_mgr_net: 'Loading department manager network...',
     label_department: 'DEPARTMENT',
     label_transferred: 'Transferred',
     msg_no_mgr_mapping: 'No department manager mapping available.',
-    msg_tfr_desc: 'Tasks transferred between managers appear here with source and destination manager details.',
-    label_tfr_record: 'transfer record',
-    label_tfr_records: 'transfer records',
     label_assigned_ems: 'Assigned employees',
     label_assigned_ems_desc: 'Only employees assigned to your account are shown here.',
-    ph_search_ems: 'Search employees by name or email...',
+    ph_search_ems: 'Search employees by name or username...',
     btn_add_emp: 'Add Employee',
     label_total_emp: 'total employee',
     label_total_emps: 'total employees',
@@ -312,7 +301,7 @@ const translations = {
     btn_disable_emp: 'Disable Employee',
     btn_enable_emp: 'Enable Employee',
     msg_no_ems_found: 'No employees found',
-    msg_no_ems_found_desc: 'Try another name or email, or add a new employee.',
+    msg_no_ems_found_desc: 'Try another name or username, or add a new employee.',
     msg_no_tasks_criteria: 'NO DIRECTIVES MATCHING CURRENT CRITERIA',
     label_records_caps: 'RECORDS',
     msg_no_tasks_dept: 'NO DIRECTIVES IN THIS DEPARTMENT',
@@ -334,7 +323,8 @@ const translations = {
     ph_example_directive: 'e.g. Initialize Subsystem Alpha',
     label_parameters_opt: '// PARAMETERS (OPTIONAL)',
     label_assign_emp: '// ASSIGN EMPLOYEE',
-    ph_search_name_email: 'Search name or email',
+    label_assign_employee: '// ASSIGN EMPLOYEE',
+    ph_search_name_email: 'Search name or username',
     label_target_dept: '// TARGET DEPARTMENT',
     label_start_cycle: '// START CYCLE',
     label_deadline_cycle: '// DEADLINE CYCLE',
@@ -342,28 +332,13 @@ const translations = {
     btn_transmit_caps: '⚡ TRANSMIT',
     title_create_emp: 'CREATE NEW EMPLOYEE',
     label_full_name_caps: '// FULL NAME',
-    label_email_caps: '// EMAIL',
+    label_email_caps: '// USERNAME',
     label_password_caps: '// PASSWORD',
     ph_min_6_char: 'Min 6 characters',
     label_assign_dept_caps: '// ASSIGN DEPARTMENT',
     msg_select_dept_err: '⚠ Select a department',
     btn_create_emp_caps: '⚡ CREATE EMPLOYEE',
-    title_tfr_directive: 'TRANSFER DIRECTIVE TO MANAGER',
-    label_selected_task: 'Selected Task',
-    msg_select_task_queue: 'Select a task from your queue',
-    msg_curr_dept_status: 'Current department: {dept} | Current status: {status}',
-    msg_tfr_instruction: 'Choose a directive that should move to another department manager.',
-    msg_no_tfr_ready: 'No transfer-ready tasks were found in your queue right now. Only tasks currently owned by you inside your managed departments can be transferred.',
-    msg_no_mgr_avail: 'No other active manager is available for transfer at the moment. Add another active manager to a department to move this task.',
-    label_choose_task: '// CHOOSE TASK',
-    ph_select_task: '-- SELECT TASK --',
-    label_target_mgr: '// TARGET MANAGER',
-    ph_select_mgr: '-- SELECT MANAGER --',
-    msg_no_mgr_dept: 'No other active manager is available inside the selected department.',
-    label_receiving_mgr: 'Receiving Manager',
-    label_depts_list: 'Departments:',
-    btn_transfer_caps: 'TRANSFER TASK',
-    btn_transferring: 'TRANSFERRING...',
+    btn_create_emp_caps: '⚡ CREATE EMPLOYEE',
 
     // Admin Specific
     title_user_tasks: '// ASSIGNED TASKS',
@@ -371,7 +346,7 @@ const translations = {
     label_due: 'Due:',
     label_user_role: '// SELECT ROLE',
     label_assign_mgr: '// ASSIGN MANAGER',
-    ph_search_role_email: 'Search by name or email',
+    ph_search_role_email: 'Search by name or username',
     label_task_title: '// TASK TITLE',
     ph_task_title_placeholder: 'Task title',
     label_priority: '// PRIORITY',
@@ -415,6 +390,16 @@ const translations = {
     you: 'YOU',
     status_active_label: 'Active',
     status_disabled_label: 'Disabled',
+    administrative_center: 'ADMIN CENTER',
+    open_admin_panel: 'Open Admin Panel',
+    close_admin_panel: 'Close Admin Panel',
+    search_directives: 'Search directives...',
+    tag_ovr: 'OVR',
+    msg_roster_description: 'Direct terminal for cross-departmental directive delegation and manager coordination.',
+    cross_dept_command: 'COMMAND NETWORK',
+    active_nodes: 'ACTIVE NODES',
+    tfr_activity_monitor: 'DIRECTIVE FLOW MONITOR',
+    records_synced: 'DIRECTIVES',
   },
   hi: {
     brand_name: 'टास्कफ्लो',
@@ -427,6 +412,7 @@ const translations = {
     nav_all_users: 'सभी उपयोगकर्ता',
     nav_departments: 'विभाग',
     nav_analytics: 'एनालिटिक्स',
+    nav_settings: 'सेटिंग्स',
     nav_logout: 'लॉगआउट',
     nav_overview: 'अवलोकन',
     user_mgmt_tab: 'उपयोगकर्ता प्रबंधन',
@@ -484,13 +470,14 @@ const translations = {
     
     // Priorities
     priority_low: 'कम',
-    priority_med: 'मध्यम',
+    priority_medium: 'मध्यम',
     priority_high: 'उच्च',
     
     // Statuses
     status_pending: 'लंबित',
     status_active: 'प्रगति में',
     status_done: 'पूरा',
+    status_overdue: 'विलंबित',
     online_status: 'ऑनलाइन',
     revoked_status: 'निरस्त',
     
@@ -513,10 +500,10 @@ const translations = {
     btn_initiate: 'शुरू करें',
     btn_initialize: 'कनेक्शन शुरू करें',
     btn_login: 'लॉगिन',
-    btn_create_user: 'यूजर बनाएँ',
-    btn_assign_task: 'टास्क सौंपें',
-    btn_transmit: 'ट्रांसमिट',
-    btn_purge: 'टास्क मिटाएं',
+    btn_create_user: 'नया यूजर जोड़ें',
+    btn_assign_task: 'नया कार्य सौंपें',
+    btn_transmit: '⚡ टास्क भेजें',
+    btn_purge: 'हमेशा के लिए मिटाएं',
     btn_update: 'अपडेट हो रहा है...',
     btn_creating: 'बनाया जा रहा है...',
     
@@ -537,13 +524,14 @@ const translations = {
     ph_brief_description: 'संक्षिप्त विवरण (वैकल्पिक)',
     ph_select_manager: 'मैनेजर चुनें...',
     ph_select_dept: 'विभाग चुनें...',
-    ph_admin_token: 'टर्मिनल एक्सेस के लिए आवश्यक',
+    ph_admin_token: 'एडमिन एक्सेस फाइल',
     
     // Messages & Alerts
     msg_loading: 'लोड हो रहा है...',
     msg_no_tasks: 'कोई निर्देश नहीं मिला',
     msg_no_tasks_found: 'कोई कार्य नहीं मिला',
     msg_tasks_appear_here: 'कार्य यहाँ दिखाई देंगे।',
+    msg_try_clearing_filters: 'अपने सक्रिय फिल्टर हटाने का प्रयास करें।',
     msg_task_update_success: 'कार्य को {status} के रूप में चिह्नित किया गया है',
     msg_task_updated: 'कार्य सफलतापूर्वक अपडेट किया गया',
     msg_failed_update: 'कार्य अपडेट करने में विफल',
@@ -606,8 +594,10 @@ const translations = {
     title_create_user: 'नया यूजर बनाएँ',
     title_assign_task: 'नया कार्य सौंपें',
     title_reset_password: 'पासवर्ड रीसेट करें',
+    title_reset_password_caps: 'पासवर्ड रीसेट करें',
     title_delete_dept: 'विभाग डिलीट करें?',
     title_sys_auth: 'सिस्टम प्राधिकरण आवश्यक',
+    btn_reset_password_caps: 'पासवर्ड रीसेट करें',
     auth_final: 'अंतिम प्राधिकरण',
     detected_conflicts: 'पाए गए विसंगतियां',
     irrevocable_action: 'गंभीर: यह क्रिया अपरिवर्तनीय है।',
@@ -615,6 +605,8 @@ const translations = {
     label_active_count: 'सक्रिय',
     dept_workload: 'डिपार्टमेंट वर्कलोड',
     status_split: 'ग्लोबल स्टेटस स्प्लिट',
+    label_dept_workload: 'विभाग कार्यभार वितरण',
+    label_global_split: 'वैश्विक स्थिति विवरण',
     
     // Login & Onboarding
     identify_clearance: 'लॉगिन क्लीयरेंस पहचानें',
@@ -638,7 +630,7 @@ const translations = {
     admin_workspace: 'एडमिन कमांड सेंटर',
     manager_workspace: 'मैनेजर सेक्टर नियंत्रण',
     employee_workspace: 'एम्प्लोई वर्कस्पेस एक्सेस',
-    sys_decrypt_token: 'सिस्टम डिक्रिप्ट टोकन',
+    sys_decrypt_token: 'एडमिन एक्सेस फाइल',
     auth_prohibited: 'अनधिकृत पहुंच सख्त वर्जित है।',
     auth_logged: 'सभी ऑपरेशन लॉग किए जाते हैं।',
     init_conn_btn: 'लॉगिन',
@@ -650,7 +642,7 @@ const translations = {
     subtitle_join_today: 'आज ही टास्कफ्लो से जुड़ें',
     label_full_name: 'पूरा नाम',
     ph_john_doe: 'जॉन डो',
-    ph_example_email: 'you@example.com',
+    ph_example_email: 'your_username',
     msg_already_have_account: 'क्या आपके पास पहले से खाता है?',
     link_signin: 'साइन इन करें',
     btn_create_account: 'खाता बनाएं',
@@ -670,7 +662,7 @@ const translations = {
     testimonial_1_text: "टास्कफ्लो ने 5 अलग-अलग उपकरणों पर हमारी निर्भरता को समाप्त कर दिया। संरचनात्मक कठोरता ने वास्तव में हमें 3 गुना तेजी से आगे बढ़ाया।",
     testimonial_1_author: "सारा जेनकिंस",
     testimonial_1_role: "वीपी इंजीनियरिंग, नेक्ससटेक",
-    testimonial_2_text: "प्रोजेक्ट मैनेजमेंट के लिए मैंने अब तक का सबसे साफ यूआई देखा है। यह मेरे मस्तिष्क के विस्तार जैसा लगता है।",
+    testimonial_2_text: "The cleanest UI I've ever seen for project management. It feels like an extension of my brain.",
     testimonial_2_author: "मार्कस थोर्न",
     testimonial_2_role: "प्रोडक्ट लीड, सिंथेटिक्स",
     testimonial_3_text: "हमें भारी-भरकम इंटरफेस के बिना सख्त पदानुक्रमित नियंत्रण की आवश्यकता थी। इसने इसे पूरी तरह से वितरित किया।",
@@ -704,6 +696,15 @@ const translations = {
     err_name_req: 'विभाग का नाम आवश्यक है।',
     err_select_manager: 'एम्प्लोई के लिए एक मैनेजर चुनें।',
     msg_tfr_params_err: 'ट्रांसफर के लिए टास्क, विभाग और मैनेजर चुनें।',
+    msg_tfr_success: 'टास्क सफलतापूर्वक {manager} को स्थानांतरित कर दिया गया।',
+    msg_tfr_accepted: 'टास्क ट्रांसफर स्वीकार कर लिया गया।',
+    msg_tfr_rejected: 'टास्क ट्रांसफर अस्वीकार कर दिया गया।',
+    btn_accept_tfr: 'कार्य स्वीकार करें',
+    btn_reject_tfr: 'अस्वीकार करें',
+    btn_withdraw_tfr: 'वापस लें',
+    label_pending_action: 'लंबित कार्रवाई',
+    msg_transfer_cancelled: 'ट्रांसफर अनुरोध सफलतापूर्वक वापस ले लिया गया।',
+    msg_transfer_error: 'ट्रांसफर कार्यवाही संसाधित करने में त्रुटि।',
 
     // Additional Dashboard Keys
     dept_mgr_desc: 'प्रत्येक विभाग प्रबंधक को देखें और दूसरे मैनेजर को निर्देश सौंपें।',
@@ -735,6 +736,7 @@ const translations = {
     msg_managing_depts: 'विभागों',
     label_managing_depts: 'प्रबंध विभाग',
     btn_deploy_task_caps: 'टास्क तैनात करें',
+    btn_transfer_task: 'कार्य स्थानांतरित करें',
     tab_overview: 'अवलोकन',
     tab_team: 'टीम',
     tab_tasks: 'टास्क',
@@ -746,6 +748,7 @@ const translations = {
     ph_example_directive: 'जैसे: सबसिस्टम अल्फा शुरू करें',
     label_parameters_opt: '// पैरामीटर (वैकल्पिक)',
     label_assign_emp: '// कर्मचारी सौंपें',
+    label_assign_employee: '// कर्मचारी सौंपें',
     ph_search_name_email: 'नाम या ईमेल खोजें',
     label_target_dept: '// लक्ष्य विभाग',
     label_start_cycle: '// प्रारंभ चक्र',
@@ -760,7 +763,7 @@ const translations = {
     label_assign_dept_caps: '// विभाग सौंपें',
     msg_select_dept_err: '⚠ एक विभाग चुनें',
     btn_create_emp_caps: '⚡ कर्मचारी बनाएँ',
-    title_tfr_directive: 'मैनेजर को निर्देश स्थानांतरित करें',
+    title_tfr_directive: 'मैनेजर को कार्य स्थानांतरित करें',
     label_selected_task: 'चयनित कार्य',
     msg_select_task_queue: 'अपनी कतार से एक कार्य चुनें',
     msg_curr_dept_status: 'वर्तमान विभाग: {dept} | वर्तमान स्थिति: {status}',
@@ -828,6 +831,7 @@ const translations = {
     you: 'आप',
     status_active_label: 'सक्रिय',
     status_disabled_label: 'अक्षम',
+    administrative_center: 'प्रशासनिक केंद्र',
   },
   gu: {
     brand_name: 'ટાસ્કફ્લો',
@@ -840,6 +844,7 @@ const translations = {
     nav_all_users: 'બધા વપરાશકો',
     nav_departments: 'વિભાગો',
     nav_analytics: 'એનાલિટિક્સ',
+    nav_settings: 'સેટિંગ્સ',
     nav_logout: 'લોગઆઉટ',
     nav_overview: 'ઝાંખી',
     user_mgmt_tab: 'વપરાશકર્તા સંચાલન',
@@ -924,10 +929,10 @@ const translations = {
     btn_initiate: 'શરૂ કરો',
     btn_initialize: 'કનેક્શન શરૂ કરો',
     btn_login: 'લોગિન',
-    btn_create_user: 'યુઝર બનાવો',
-    btn_assign_task: 'ટાસ્ક સોંપો',
-    btn_transmit: 'ટ્રાન્સમિટ',
-    btn_purge: 'ટાસ્ક કાઢી નાખો',
+    btn_create_user: 'નવો યુઝર ઉમેરો',
+    btn_assign_task: 'નવું કાર્ય સોંપો',
+    btn_transmit: '⚡ ટાસ્ક મોકલો',
+    btn_purge: 'કાયમ માટે કાઢી નાખો',
     btn_update: 'અપડેટ થઈ રહ્યું છે...',
     btn_creating: 'બનાવી રહ્યા છીએ...',
     
@@ -948,7 +953,7 @@ const translations = {
     ph_brief_description: 'ટૂંકું વર્ણન (વૈકલ્પિક)',
     ph_select_manager: 'મેનેજર પસંદ કરો...',
     ph_select_dept: 'વિભાગ પસંદ કરો...',
-    ph_admin_token: 'ટર્મિનલ એક્સેસ માટે જરૂરી',
+    ph_admin_token: 'એડમિન એક્સેસ ફાઇલ',
     
     // Messages & Alerts
     msg_loading: 'લોડ થઈ રહ્યું છે...',
@@ -1040,7 +1045,7 @@ const translations = {
     val_invite: 'આમંત્રણની ચકાસણી થઈ રહી છે...',
     link_expired: 'લિંક સમાપ્ત થઈ ગઈ',
     already_activated: 'પહેલેથી સક્રિય',
-    onboarding_footer: 'આ સુરક્ષિત સક્રિયકરણ લિંક છે. તેને શેર કરશો નહીં.',
+    onboarding_footer: 'આ સુરક્ષિત સક્રિયકરણ લિંક છે. તેને શેર કરશો નહીં।',
     login_email: 'ઈમેલ',
     login_password: 'પાસવર્ડ',
     back_to_root: 'રૂટ પર પાછા ફરો',
@@ -1048,9 +1053,9 @@ const translations = {
     admin_workspace: 'એડમિન કમાન્ડ સેન્ટર',
     manager_workspace: 'મેનેજર સેક્ટર નિયંત્રણ',
     employee_workspace: 'એમ્પ્લોઈ વર્કસ્પેસ એક્સેસ',
-    sys_decrypt_token: 'સિસ્ટમ ડિક્રિપ્ટ ટોકન',
-    auth_prohibited: 'અનધિકૃત એક્સેસ સખત પ્રતિબંધિત છે.',
-    auth_logged: 'બધી કામગીરી લોગ કરવામાં આવે છે.',
+    sys_decrypt_token: 'એડમિન એક્સેસ ફાઇલ',
+    auth_prohibited: 'અનધિકૃત એક્સેસ સખત પ્રતિબંધિત છે।',
+    auth_logged: 'બધી કામગીરી લોગ કરવામાં આવે છે।',
     init_conn_btn: 'કનેક્શન શરૂ કરો',
     
     // Signup
@@ -1058,7 +1063,7 @@ const translations = {
     subtitle_join_today: 'આજે જ ટાસ્કફ્લોમાં જોડાઓ',
     label_full_name: 'પૂરું નામ',
     ph_john_doe: 'જ્હોન ડો',
-    ph_example_email: 'you@example.com',
+    ph_example_email: 'your_username',
     msg_already_have_account: 'શું તમારી પાસે પહેલેથી ખાતું છે?',
     link_signin: 'સાઇન ઇન કરો',
     btn_create_account: 'ખાતું બનાવો',
@@ -1090,7 +1095,7 @@ const translations = {
     footer_rights: '© 2026 ટાસ્કફ્લો સિસ્ટમ્સ ઇન્ક. સર્વાધિકાર સુરક્ષિત.',
     tag_overdue: 'વિલંબ',
     tag_due: 'બાકી',
-    tag_left: 'બાકી છે',
+    tag_left: 'બચ્યો છે',
     tag_ovr: 'OVR',
     tooltip_edit: 'સૂચના સુધારો',
     task_transfer_btn: 'ટ્રાન્સફર',
@@ -1111,7 +1116,16 @@ const translations = {
     err_pass_short: 'પાસવર્ડ ઓછામાં ઓછા 6 અક્ષરોનો હોવો જોઈએ.',
     err_name_req: 'વિભાગનું નામ જરૂરી છે.',
     err_select_manager: 'એમ્પ્લોઈ માટે મેનેજર પસંદ કરો.',
-    msg_tfr_params_err: 'ટ્રાન્સફર માટે ટાસ્ક, વિભાગ અને મેનેજર પસંદ કરો.',
+    msg_tfr_params_err: 'ટ્રાન્સફર માટે ટાસ્ક, વિભાગ અને મેનેજર પસંદ કરો।',
+    msg_tfr_success: 'ટાસ્ક સફળતાપૂર્વક {manager} ને ટ્રાન્સફર કરવામાં આવ્યો.',
+    msg_tfr_accepted: 'ટાસ્ક ટ્રાન્સફર સ્વીકારવામાં આવ્યો.',
+    msg_tfr_rejected: 'ટાસ્ક ટ્રાન્સફર અસ્વીકાર કરવામાં આવ્યો.',
+    btn_accept_tfr: 'કાર્ય સ્વીકારો',
+    btn_reject_tfr: 'નકારો',
+    btn_withdraw_tfr: 'પાછું ખેંચો',
+    label_pending_action: 'બાકી કાર્યવાહી',
+    msg_transfer_cancelled: 'ટ્રાન્સફર વિનંતી સફળતાપૂર્વક પાછી ખેંચી લેવામાં આવી.',
+    msg_transfer_error: 'ટ્રાન્સફર પ્રક્રિયામાં ભૂલ.',
 
     // Additional Dashboard Keys
     dept_mgr_desc: 'દરેક વિભાગના મેનેજરને જુઓ અને બીજા મેનેજરને સૂચના સોંપો.',
@@ -1143,6 +1157,7 @@ const translations = {
     msg_managing_depts: 'વિભાગો',
     label_managing_depts: 'મેનેજિંગ વિભાગો',
     btn_deploy_task_caps: 'ટાસ્ક બનાવો',
+    btn_transfer_task: 'કાર્ય ટ્રાન્સફર કરો',
     tab_overview: 'ઝાંખી',
     tab_team: 'ટીમ',
     tab_tasks: 'ટાસ્ક',
@@ -1168,7 +1183,7 @@ const translations = {
     label_assign_dept_caps: '// વિભાગ સોંપો',
     msg_select_dept_err: '⚠ વિભાગ પસંદ કરો',
     btn_create_emp_caps: '⚡ કર્મચારી બનાવો',
-    title_tfr_directive: 'મેનેજરને સૂચના ટ્રાન્સફર કરો',
+    title_tfr_directive: 'મેનેજરને કાર્ય ટ્રાન્સફર કરો',
     label_selected_task: 'પસંદ કરેલ કાર્ય',
     msg_select_task_queue: 'તમારી કતારમાંથી એક કાર્ય પસંદ કરો',
     msg_curr_dept_status: 'વર્તમાન વિભાગ: {dept} | વર્તમાન સ્થિતિ: {status}',
@@ -1236,18 +1251,51 @@ const translations = {
     you: 'તમે',
     status_active_label: 'સક્રિય',
     status_disabled_label: 'અક્ષમ',
+    administrative_center: 'વહીવટી કેન્દ્ર',
+    open_admin_panel: 'એડમિન પેનલ ખોલો',
+    close_admin_panel: 'એડમિન પેનલ બંધ કરો',
+    search_directives: 'સૂચનાઓ શોધો...',
+    tag_ovr: 'OVR',
+    msg_roster_description: 'ક્રોસ-ડિપાર્ટમેન્ટલ ડાયરેક્ટિવ ડેલિગેશન માટે ડાયરેક્ટ ટર્મિનલ.',
+    cross_dept_command: 'કમાન્ડ નેટવર્ક',
+    active_nodes: 'સક્રિય નોડ્સ',
+    tfr_activity_monitor: 'ડાયરેક્ટિવ ફ્લો મોનિટર',
+    records_synced: 'નિર્દેશો',
   },
 };
 
 export function LanguageProvider({ children }) {
   const [currentLanguage, setCurrentLanguage] = useState(localStorage.getItem('preferredLanguage') || 'en');
+  const location = useLocation();
 
   useEffect(() => {
     localStorage.setItem('preferredLanguage', currentLanguage);
   }, [currentLanguage]);
 
+  const formatMissingKey = (key) => {
+    const raw = String(key || '').trim();
+    if (!raw) return '';
+
+    const cleaned = raw
+      .replace(/_caps$/i, '')
+      .replace(/^(btn|msg|label|ph|title|nav|stat|task|role|status|err|notif|tag)_/i, '')
+      .replace(/_/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim()
+      .toLowerCase();
+
+    if (!cleaned) return raw;
+    return cleaned.replace(/\b\w/g, (ch) => ch.toUpperCase());
+  };
+
   const t = (key) => {
-    return translations[currentLanguage][key] || translations['en'][key] || key;
+    // Force English for Landing, Auth selection, and Login pages
+    const publicPaths = ['/', '/login', '/signup', '/login/manager', '/login/employee', '/secure-admin-portal-xyz'];
+    const isPublic = publicPaths.includes(location.pathname);
+    
+    const lang = isPublic ? 'en' : currentLanguage;
+    const value = translations[lang]?.[key] || translations.en?.[key];
+    return value || formatMissingKey(key);
   };
 
   return (

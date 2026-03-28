@@ -3,19 +3,22 @@ import { Outlet, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import Sidebar from '../components/shared/Sidebar';
 import TopNavbar from '../components/shared/TopNavbar';
-import ParticleField from '../components/3d/ParticleField';
 import { useLanguage } from '../contexts/LanguageContext';
+import { useTheme } from '../contexts/ThemeContext';
 
 export default function DashboardLayout() {
   const { t } = useLanguage();
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const location = useLocation();
+  const { theme } = useTheme();
+  const isDark = theme === 'dark';
 
   const PAGE_TITLES = {
     '/employee':        t('title_my_tasks'),
     '/manager':         t('title_manager_hub'),
     '/manager/create':  t('nav_create_task'),
+    '/manager/my-tasks': t('title_my_tasks'),
     '/manager/team':    t('nav_team'),
     '/admin':           t('title_control_center'),
     '/admin/tasks':     t('nav_all_tasks'),
@@ -29,14 +32,20 @@ export default function DashboardLayout() {
 
   return (
     <div className="flex h-screen overflow-hidden relative" style={{ background: 'var(--bg-primary)' }}>
-      {/* 3D Particle Background */}
-      <ParticleField />
-
       {/* Ambient orbs */}
-      <div className="fixed top-0 left-0 w-[600px] h-[400px] pointer-events-none z-0"
-        style={{ background: 'radial-gradient(ellipse at 30% 20%, var(--accent-glow), transparent 70%)' }} />
-      <div className="fixed bottom-0 right-0 w-[500px] h-[400px] pointer-events-none z-0"
-        style={{ background: 'radial-gradient(ellipse at 70% 80%, rgba(191,0,255,0.05) 0%, transparent 70%)' }} />
+      <div className="fixed top-[-10%] left-[-10%] w-[40%] h-[40%] pointer-events-none z-0 overflow-hidden"
+        style={{ 
+          background: 'radial-gradient(circle at center, var(--accent-glow), transparent 70%)',
+          filter: 'blur(80px)',
+          opacity: isDark ? 0.3 : 0.4
+        }} />
+      <div className="fixed bottom-[-10%] right-[-10%] w-[35%] h-[40%] pointer-events-none z-0 overflow-hidden"
+        style={{ 
+          background: isDark 
+            ? 'radial-gradient(circle at center, rgba(191,0,255,0.1) 0%, transparent 70%)'
+            : 'radial-gradient(circle at center, rgba(14,165,233,0.08) 0%, transparent 70%)',
+          filter: 'blur(80px)',
+        }} />
 
       {/* Content */}
       <div className="relative z-10 flex w-full h-full">

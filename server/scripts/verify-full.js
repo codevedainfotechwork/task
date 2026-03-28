@@ -12,12 +12,12 @@ async function test() {
     const adminLogin = await axios.post(`${BASE}/auth/login`, {
       email: 'shrutilathiya18@gmail.com',
       password: 'password',
-      adminToken: process.env.ADMIN_SECRET_TOKEN,
+      adminAuthFile: null,
       portalRole: 'admin'
     });
     if (adminLogin.data.error) throw new Error(adminLogin.data.message);
-    const adminJWT = adminLogin.data.token;
-    const adminHeaders = { Authorization: `Bearer ${adminJWT}` };
+    const adminToken = adminLogin.data.token;
+    const adminHeaders = { Authorization: `Bearer ${adminToken}` };
     console.log('   OK: Admin logged in as', adminLogin.data.user.name);
 
     // 2. Admin: Fetch All Users
@@ -72,8 +72,8 @@ async function test() {
       portalRole: 'manager'
     });
     if (mgrLogin.data.error) throw new Error(mgrLogin.data.message);
-    const mgrJWT = mgrLogin.data.token;
-    const mgrHeaders = { Authorization: `Bearer ${mgrJWT}` };
+    const mgrToken = mgrLogin.data.token;
+    const mgrHeaders = { Authorization: `Bearer ${mgrToken}` };
     console.log('   OK: Manager logged in as', mgrLogin.data.user.name);
 
     // 8. Manager: Fetch Employees (scoped)

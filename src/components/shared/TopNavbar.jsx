@@ -5,18 +5,27 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useNotification } from '../../contexts/NotificationContext';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { useTheme } from '../../contexts/ThemeContext';
+import { useSettings } from '../../contexts/SettingsContext';
+import { resolveAssetUrl } from '../../utils/assetUrl';
+import codevedaSymbol from '../../assets/codeveda_symbol2.png';
+import codevedaText from '../../assets/codeveda_text3.jpg';
 
 export default function TopNavbar({ pageTitle, setMobileOpen }) {
   const { currentUser } = useAuth();
   const { notifications, unreadCount, markAllRead, openNotification } = useNotification();
   const { currentLanguage, setCurrentLanguage, t } = useLanguage();
   const { theme, toggleTheme } = useTheme();
+  const { settings } = useSettings();
   const isDark = theme === 'dark';
   const [showNotificationPanel, setShowNotificationPanel] = useState(false);
   const [showLangMenu, setShowLangMenu] = useState(false);
   const notificationPanelRef = useRef(null);
   const langMenuRef = useRef(null);
   const recentNotifications = notifications.slice(0, 8);
+  const companyName = (settings?.companyName || 'TASKFLOW').trim();
+  const companyParts = companyName.split(/\s+/).filter(Boolean);
+  const companyPrimary = companyParts[0] || 'TASKFLOW';
+  const companySecondary = companyParts.slice(1).join(' ');
 
   useEffect(() => {
     if (!showNotificationPanel) {
@@ -49,53 +58,100 @@ export default function TopNavbar({ pageTitle, setMobileOpen }) {
       {/* Mobile Hamburger */}
       <button
         onClick={() => setMobileOpen(true)}
-        className="md:hidden p-2 rounded-xl text-cyan-400 hover:bg-cyan-900/40 transition-colors"
+        className="md:hidden p-2 rounded-xl transition-colors"
+        style={{ color: 'var(--primary)', background: 'var(--bg-secondary)', border: '1px solid var(--border-subtle)' }}
       >
         <Menu size={20} />
       </button>
 
-      {/* Page title */}
-      <div className="flex-1 overflow-hidden">
-        <div className="flex items-center gap-1.5 md:gap-2">
-          <Zap size={14} className="text-cyan-400 flex-shrink-0" style={{ filter: 'drop-shadow(0 0 6px #00d4ff)' }} />
-          <h1 className="text-sm md:text-base font-bold tracking-wide neon-text-blue truncate">{pageTitle}</h1>
+      {/* Page title / Logo */}
+      <div className="flex-1 overflow-hidden flex items-center pr-4">
+        <div className="transition-all duration-300 hover:opacity-80 flex items-center gap-0 pl-1 md:pl-2">
+          {/* Symbol */}
+          <div className="relative flex items-center">
+            {settings?.logoDataUrl ? (
+              <img
+                src={resolveAssetUrl(settings.logoDataUrl)}
+                alt="Brand Logo"
+                className="h-[32px] w-[32px] md:h-[40px] md:w-[40px] object-cover rounded-xl border border-white/10 shadow-sm"
+              />
+            ) : (
+              <img 
+                src={codevedaSymbol} 
+                alt="Brand Symbol" 
+                className={`h-[32px] md:h-[40px] w-auto object-contain transition-all duration-300 z-10 ${
+                  isDark 
+                    ? 'invert mix-blend-screen drop-shadow-[0_0_8px_rgba(0,180,255,0.3)]' 
+                    : 'mix-blend-multiply drop-shadow-sm'
+                }`}
+                style={{ filter: isDark ? 'invert(1) hue-rotate(180deg)' : 'none' }}
+              />
+            )}
+          </div>
+          
+          {/* Dynamic Company Name */}
+          <div className="flex flex-col ml-3 md:ml-4">
+            <span className={`text-[15px] md:text-[18px] font-black tracking-[0.15em] uppercase leading-none ${isDark ? 'text-white' : 'text-slate-900'}`}
+              style={{ fontFamily: "'Outfit', sans-serif" }}>
+              {companyPrimary}
+            </span>
+            {companySecondary && (
+              <span className={`text-[8px] md:text-[10px] font-bold tracking-[0.3em] uppercase mt-1 ${isDark ? 'text-indigo-400/80' : 'text-indigo-600/80'}`}>
+                {companySecondary}
+              </span>
+            )}
+          </div>
         </div>
-        <p className="text-[10px] hidden sm:block font-mono mt-0.5" style={{ color: 'rgba(0,212,255,0.35)' }}>
-          {t('sys_date')} :: {new Date().toLocaleDateString(currentLanguage === 'hi' ? 'hi-IN' : currentLanguage === 'gu' ? 'gu-IN' : 'en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' }).toUpperCase()}
-        </p>
       </div>
 
-      {/* Glowing status bar */}
-      <div className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-lg"
-        style={{ background: 'rgba(0,255,136,0.06)', border: '1px solid rgba(0,255,136,0.15)' }}>
-        <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" style={{ boxShadow: '0 0 8px #00ff88' }} />
-        <span className="text-[10px] font-mono text-emerald-400 tracking-wider uppercase">{t('online')}</span>
-      </div>
+      {/* Right side container */}
+      <div className="flex flex-col items-end justify-center py-1 shrink-0">
+        
+        {/* Actions Row */}
+        <div className="flex items-center gap-1.5 md:gap-2">
+          
+          {/* Glowing status bar */}
+          <div className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-lg"
+            style={{ background: isDark ? 'rgba(0,255,136,0.06)' : 'rgba(5, 150, 105, 0.05)', border: `1px solid ${isDark ? 'rgba(0,255,136,0.15)' : 'rgba(5, 150, 105, 0.1)'}` }}>
+            <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" style={{ boxShadow: isDark ? '0 0 8px #00ff88' : 'none' }} />
+            <span className="text-[10px] font-mono text-emerald-600 dark:text-emerald-400 tracking-wider uppercase">{t('online')}</span>
+          </div>
 
-      {/* Actions */}
-      <div className="flex items-center gap-1.5">
+          {/* Action Icons Wrapper */}
+          <div className="flex items-center gap-1.5">
         {/* Theme toggle */}
         <motion.button
-          whileHover={{ scale: 1.1 }}
-          whileTap={{ scale: 0.9 }}
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
           onClick={toggleTheme}
-          className="p-2 rounded-xl transition-all duration-200"
-          style={{ color: 'rgba(0,212,255,0.5)', border: '1px solid rgba(0,212,255,0.08)' }}
+          className="p-2.5 rounded-xl transition-all duration-300 border border-white/10 dark:border-white/5 shadow-sm"
+          style={{ 
+            color: 'var(--primary)',
+            background: 'var(--bg-input)',
+            borderColor: 'var(--border-subtle)',
+            boxShadow: 'var(--shadow-sm)'
+          }}
+          title={isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
         >
-          {isDark ? <Sun size={16} /> : <Moon size={16} />}
+          {isDark ? <Sun size={18} strokeWidth={2.5} /> : <Moon size={18} strokeWidth={2.5} />}
         </motion.button>
 
         {/* Language switcher */}
         <div className="relative" ref={langMenuRef}>
           <motion.button
-            whileHover={{ scale: 1.1 }}
-            whileTap={{ scale: 0.9 }}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
             onClick={() => setShowLangMenu(!showLangMenu)}
-            className="p-2 rounded-xl transition-all duration-200 flex items-center gap-1.5"
-            style={{ color: 'rgba(0,212,255,0.5)', border: '1px solid rgba(0,212,255,0.08)' }}
+            className="p-2.5 rounded-xl transition-all duration-300 flex items-center gap-2 border"
+            style={{ 
+              color: 'var(--primary)',
+              background: 'var(--bg-input)',
+              borderColor: 'var(--border-subtle)',
+              boxShadow: 'var(--shadow-sm)'
+            }}
           >
-            <Globe size={16} />
-            <span className="text-[10px] font-bold font-mono">{currentLanguage.toUpperCase()}</span>
+            <Globe size={18} strokeWidth={2.5} />
+            <span className="text-[10px] font-bold font-mono tracking-widest">{currentLanguage.toUpperCase()}</span>
           </motion.button>
 
           <AnimatePresence>
@@ -104,12 +160,12 @@ export default function TopNavbar({ pageTitle, setMobileOpen }) {
                 initial={{ opacity: 0, y: 8, scale: 0.96 }}
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 exit={{ opacity: 0, y: 8, scale: 0.96 }}
-                className="absolute right-0 top-[calc(100%+8px)] z-30 w-32 p-1.5 rounded-2xl border"
+                className="absolute right-0 top-[calc(100%+8px)] z-30 w-40 p-1.5 rounded-2xl border overflow-hidden"
                 style={{
-                  background: 'rgba(3,7,18,0.95)',
-                  borderColor: 'rgba(0,212,255,0.16)',
+                  background: 'var(--bg-card)',
+                  borderColor: 'var(--border-subtle)',
                   backdropFilter: 'blur(20px)',
-                  boxShadow: '0 10px 30px rgba(0,0,0,0.5)',
+                  boxShadow: 'var(--shadow-lg)',
                 }}
               >
                 {[
@@ -123,12 +179,12 @@ export default function TopNavbar({ pageTitle, setMobileOpen }) {
                       setCurrentLanguage(lang.id);
                       setShowLangMenu(false);
                     }}
-                    className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-left transition-all duration-200 ${
-                      currentLanguage === lang.id ? 'bg-cyan-500/10 text-cyan-400' : 'text-slate-400 hover:bg-white/5 hover:text-white'
+                    className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-left transition-all duration-200 ${
+                      currentLanguage === lang.id ? 'bg-indigo-500/10 text-indigo-600 dark:bg-cyan-500/10 dark:text-cyan-400' : 'text-slate-500 hover:bg-slate-100 dark:hover:bg-white/5 hover:text-slate-900 dark:hover:text-white'
                     }`}
                   >
-                    <span className="text-[11px] font-medium">{lang.label}</span>
-                    {currentLanguage === lang.id && <div className="w-1 h-1 rounded-full bg-cyan-400" />}
+                    <span className="text-[11px] font-bold font-mono tracking-wider">{lang.label.toUpperCase()}</span>
+                    {currentLanguage === lang.id && <div className="w-1.5 h-1.5 rounded-full bg-indigo-600 dark:bg-cyan-400" />}
                   </button>
                 ))}
               </motion.div>
@@ -138,24 +194,25 @@ export default function TopNavbar({ pageTitle, setMobileOpen }) {
 
         <div className="relative" ref={notificationPanelRef}>
           <motion.button
-            whileHover={{ scale: 1.1 }}
-            whileTap={{ scale: 0.9 }}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
             onClick={() => setShowNotificationPanel((prev) => !prev)}
-            className="relative p-2 rounded-xl transition-all duration-200"
+            className="relative p-2.5 rounded-xl transition-all duration-300 border"
             style={{
-              color: unreadCount > 0 ? '#00d4ff' : 'rgba(0,212,255,0.4)',
-              border: `1px solid ${unreadCount > 0 ? 'rgba(0,212,255,0.3)' : 'rgba(0,212,255,0.08)'}`,
-              boxShadow: unreadCount > 0 ? '0 0 15px rgba(0,212,255,0.15)' : 'none',
+              color: unreadCount > 0 ? 'var(--primary-glow)' : 'var(--primary)',
+              background: 'var(--bg-input)',
+              borderColor: unreadCount > 0 ? 'var(--border-glow)' : 'var(--border-subtle)',
+              boxShadow: unreadCount > 0 ? '0 0 15px var(--accent-glow)' : 'var(--shadow-sm)',
             }}
             title={t('task_alerts')}
           >
-            <Bell size={16} className={unreadCount > 0 ? 'animate-pulse-neon' : ''} />
+            <Bell size={18} strokeWidth={2.5} className={unreadCount > 0 && isDark ? 'animate-pulse' : ''} />
             {unreadCount > 0 && (
               <motion.span
                 initial={{ scale: 0 }}
                 animate={{ scale: 1 }}
-                className="absolute -top-1 -right-1 w-4 h-4 rounded-full text-[9px] font-bold text-black flex items-center justify-center"
-                style={{ background: '#00d4ff', boxShadow: '0 0 10px #00d4ff' }}
+                className="absolute -top-1 -right-1 w-4.5 h-4.5 rounded-full text-[9px] font-bold text-white flex items-center justify-center border-2 border-white dark:border-[#030012]"
+                style={{ background: 'var(--status-overdue)', boxShadow: '0 0 10px rgba(255, 69, 58, 0.4)' }}
               >
                 {unreadCount}
               </motion.span>
@@ -171,23 +228,23 @@ export default function TopNavbar({ pageTitle, setMobileOpen }) {
                 transition={{ duration: 0.18, ease: 'easeOut' }}
                 className="absolute right-0 top-[calc(100%+12px)] z-30 w-[340px] max-w-[calc(100vw-2rem)] overflow-hidden rounded-[28px] border"
                 style={{
-                  background: 'linear-gradient(160deg, rgba(3,7,18,0.96), rgba(8,15,30,0.94))',
-                  borderColor: 'rgba(0,212,255,0.16)',
+                  background: 'var(--bg-card)',
+                  borderColor: 'var(--border-subtle)',
                   backdropFilter: 'blur(20px)',
-                  boxShadow: '0 24px 60px rgba(0,0,0,0.45), 0 0 30px rgba(0,212,255,0.08)',
+                  boxShadow: 'var(--shadow-lg)',
                 }}
               >
-                <div className="border-b border-cyan-400/10 px-4 py-4">
+                <div className="border-b px-4 py-4" style={{ borderColor: 'var(--border-subtle)' }}>
                   <div className="flex items-center justify-between gap-3">
                     <div>
-                      <p className="text-[10px] font-mono tracking-[0.24em] text-cyan-300/70 uppercase">{t('notif_log')}</p>
-                      <h3 className="mt-1 text-sm font-semibold text-white uppercase">{t('task_alerts')}</h3>
+                      <p className="text-[10px] font-mono font-bold tracking-[0.24em] text-indigo-600 dark:text-cyan-400 uppercase">{t('notif_log')}</p>
+                      <h3 className="mt-1 text-sm font-bold text-slate-900 dark:text-white uppercase tracking-tight">{t('task_alerts')}</h3>
                     </div>
                     <button
                       type="button"
                       onClick={markAllRead}
                       disabled={unreadCount === 0}
-                      className="rounded-xl border border-cyan-400/15 px-3 py-1.5 text-[10px] font-mono tracking-[0.18em] text-cyan-200 transition disabled:cursor-not-allowed disabled:opacity-40"
+                      className="rounded-xl border border-indigo-500/20 bg-indigo-500/5 px-3 py-1.5 text-[10px] font-mono font-bold tracking-[0.18em] text-indigo-600 dark:text-cyan-400 transition hover:bg-indigo-500/10 dark:hover:bg-cyan-400/10 disabled:cursor-not-allowed disabled:opacity-40 shadow-sm"
                     >
                       {t('mark_read')}
                     </button>
@@ -208,26 +265,26 @@ export default function TopNavbar({ pageTitle, setMobileOpen }) {
                           openNotification(notification);
                           setShowNotificationPanel(false);
                         }}
-                        className="w-full rounded-2xl border px-4 py-3 text-left transition hover:border-cyan-400/30 hover:bg-cyan-400/5"
+                        className="w-full rounded-2xl border px-4 py-3 text-left transition-all duration-300 hover:shadow-md group/notif"
                         style={{
-                          borderColor: notification.isRead ? 'rgba(255,255,255,0.08)' : 'rgba(0,212,255,0.18)',
-                          background: notification.isRead ? 'rgba(255,255,255,0.03)' : 'rgba(0,212,255,0.05)',
+                          borderColor: notification.isRead ? 'var(--border-subtle)' : 'var(--primary-glow)',
+                          background: notification.isRead ? 'transparent' : 'var(--bg-secondary)',
                         }}
                       >
                         <div className="flex items-start justify-between gap-3">
                           <div className="min-w-0 flex-1">
-                            <p className="truncate text-sm font-semibold text-white">
+                            <p className={`truncate text-sm font-bold transition-colors ${notification.isRead ? 'text-slate-700 dark:text-slate-300' : 'text-slate-900 dark:text-white'}`}>
                               {notification.taskTitle || notification.message}
                             </p>
-                            <p className="mt-1 text-xs leading-relaxed text-slate-400">
+                            <p className={`mt-1 text-xs leading-relaxed transition-colors ${notification.isRead ? 'text-slate-500 dark:text-slate-400' : 'text-slate-700 dark:text-slate-300'}`}>
                               {notification.description || notification.message}
                             </p>
                           </div>
                           {!notification.isRead && (
-                            <span className="mt-1 h-2.5 w-2.5 shrink-0 rounded-full bg-cyan-300 shadow-[0_0_12px_rgba(34,211,238,0.9)]" />
+                            <span className="mt-1 h-3 w-3 shrink-0 rounded-full bg-indigo-600 dark:bg-cyan-300 shadow-[0_0_12px_var(--primary-glow)] animate-pulse" />
                           )}
                         </div>
-                        <p className="mt-3 text-[10px] font-mono tracking-[0.16em] text-cyan-300/55">
+                        <p className="mt-3 text-[10px] font-mono font-bold tracking-[0.16em] text-indigo-600/60 dark:text-cyan-400/60 uppercase italic">
                           {notification.createdAt
                             ? new Date(notification.createdAt).toLocaleString(currentLanguage === 'hi' ? 'hi-IN' : currentLanguage === 'gu' ? 'gu-IN' : 'en-US', {
                                 month: 'short',
@@ -248,16 +305,23 @@ export default function TopNavbar({ pageTitle, setMobileOpen }) {
 
         {/* Profile avatar */}
         <motion.div
-          whileHover={{ scale: 1.08 }}
-          className="w-8 h-8 rounded-xl flex items-center justify-center text-[11px] font-bold text-white cursor-pointer"
+          whileHover={{ scale: 1.1, y: -1 }}
+          className="w-9 h-9 rounded-xl flex items-center justify-center text-[11px] font-bold text-white cursor-pointer transition-all duration-300 border"
           style={{
-            background: 'linear-gradient(135deg, rgba(0,212,255,0.7), rgba(191,0,255,0.7))',
-            border: '1px solid rgba(0,212,255,0.4)',
-            boxShadow: '0 0 15px rgba(0,212,255,0.2)',
+            background: 'linear-gradient(135deg, var(--primary), var(--secondary))',
+            borderColor: 'var(--border-subtle)',
+            boxShadow: 'var(--shadow-md)',
           }}
         >
-          {currentUser?.avatar}
+          {currentUser?.avatar || (currentUser?.name ? currentUser.name.substring(0, 2).toUpperCase() : '??')}
         </motion.div>
+          </div>
+        </div>
+
+        {/* Date Row (Moved from left side) */}
+        <p className="text-[9px] hidden sm:block font-mono tracking-widest mt-[5px] opacity-80" style={{ color: 'var(--text-dim)' }}>
+          {t('sys_date')} :: {new Date().toLocaleDateString(currentLanguage === 'hi' ? 'hi-IN' : currentLanguage === 'gu' ? 'gu-IN' : 'en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' }).toUpperCase()}
+        </p>
       </div>
     </header>
   );

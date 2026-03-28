@@ -1,13 +1,20 @@
 const express = require('express');
 const bcrypt = require('bcryptjs');
+const multer = require('multer');
+const path = require('path');
 const router = express.Router();
 const Task = require('../models/Task');
 const User = require('../models/User');
 const Department = require('../models/Department');
 const Notification = require('../models/Notification');
+const HelpRequest = require('../models/HelpRequest');
 const ActivityLog = require('../models/ActivityLog');
 const auth = require('../middleware/auth');
 const requireRole = require('../middleware/roles');
+const { verifyAdminAccessFile, readAdminAccessFile, createAdminAccessArtifact } = require('../utils/adminAccessFile');
+const { ensureSupabaseAdminUser } = require('../utils/supabaseAuth');
+
+const upload = multer({ storage: multer.memoryStorage() });
 
 function sanitizeUser(user) {
   if (!user) {
@@ -23,9 +30,28 @@ function sanitizeUser(user) {
 router.get('/user/:id/tasks', auth, requireRole('admin'), async (req, res) => {
   try {
     const userId = req.params.id;
-    const tasks = await Task.find({ assignedTo: userId });
-    
-    // Return empty array if no tasks, but ensure it's not an error response
+    const targetUser = await User.findById(userId).select('_id role');
+
+    if (!targetUser) {
+      return res.status(404).json({ message: 'User not found.' });
+    }
+
+    let query;
+    if (targetUser.role === 'manager') {
+      query = {
+        $or: [
+          { assignedTo: userId },
+          { assignedBy: userId },
+        ],
+      };
+    } else if (targetUser.role === 'admin') {
+      query = { assignedBy: userId };
+    } else {
+      query = { assignedTo: userId };
+    }
+
+    const tasks = await Task.find(query);
+    tasks.sort((left, right) => Number(right.id || right._id || 0) - Number(left.id || left._id || 0));
     res.json(tasks || []);
   } catch (error) {
     console.error('Error fetching user tasks for admin:', error);
@@ -52,6 +78,20 @@ router.put('/reset-password/:id', auth, requireRole('admin'), async (req, res) =
       return res.status(404).json({ message: 'User not found.' });
     }
 
+    if (targetUser.role === 'admin') {
+      try {
+        await ensureSupabaseAdminUser({
+          email: targetUser.email,
+          password: newPassword,
+          name: targetUser.name,
+          username: targetUser.username,
+          role: 'admin',
+        });
+      } catch (syncError) {
+        console.warn(`Supabase Auth sync skipped for admin password reset ${targetUser.username}: ${syncError.message}`);
+      }
+    }
+
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(newPassword, salt);
     const updatedUser = await User.updateById(targetUser._id, { password: hashedPassword });
@@ -66,12 +106,60 @@ router.put('/reset-password/:id', auth, requireRole('admin'), async (req, res) =
   }
 });
 
+// POST /api/admin/access-file/verify
+router.post('/access-file/verify', auth, requireRole('admin'), upload.single('adminAuthFile'), async (req, res) => {
+  try {
+    if (!req.file || !req.file.buffer || !req.file.buffer.length) {
+      return res.status(400).json({ error: 'missing_admin_file', message: 'Admin access file is required.' });
+    }
+
+    const currentUser = await User.findById(req.user._id).select('+password');
+
+    if (!currentUser) {
+      return res.status(404).json({ error: 'missing_admin_file_config', message: 'Admin access file is not configured for this account.' });
+    }
+
+    const expectedArtifact = createAdminAccessArtifact({
+      username: currentUser.username || currentUser.email,
+      name: currentUser.name,
+      userId: currentUser._id,
+      seed: currentUser.adminAccessSeed,
+      issuedAt: currentUser.adminAccessIssuedAt,
+    });
+    const matches = await verifyAdminAccessFile(
+      req.file.buffer,
+      {
+        username: currentUser.username || currentUser.email,
+        name: currentUser.name,
+        userId: currentUser._id,
+        hash: currentUser.adminAccessFileHash,
+      },
+      expectedArtifact
+    );
+    if (!matches) {
+      return res.status(403).json({ error: 'invalid_admin_file', message: 'Invalid admin access file.' });
+    }
+
+    const filePath = path.join(__dirname, '..', 'generated', 'admin-access', currentUser.adminAccessFileName || '');
+    const fileContent = await readAdminAccessFile(filePath);
+
+    res.json({
+      message: 'Admin access file verified successfully.',
+      fileName: currentUser.adminAccessFileName || null,
+      fileContent,
+    });
+  } catch (error) {
+    console.error('Admin access file verify error:', error);
+    res.status(500).json({ message: 'Server error verifying admin access file.' });
+  }
+});
+
 // Temporary Maintenance Endpoint: Purge and Reset DB
-// GET /api/admin/purge-and-reset?key=YOUR_ADMIN_SECRET_TOKEN
+// GET /api/admin/purge-and-reset?key=YOUR_MAINTENANCE_SECRET_KEY
 router.get('/purge-and-reset', async (req, res) => {
   try {
     const { key } = req.query;
-    if (!key || key !== process.env.ADMIN_SECRET_TOKEN) {
+    if (!key || key !== process.env.MAINTENANCE_SECRET_KEY) {
       return res.status(403).json({ message: 'Unauthorized. Invalid maintenance key.' });
     }
 
@@ -83,6 +171,7 @@ router.get('/purge-and-reset', async (req, res) => {
       Task.deleteMany({}),
       Department.deleteMany({}),
       Notification.deleteMany({}),
+      HelpRequest.deleteMany({}),
       ActivityLog.deleteMany({})
     ]);
 
